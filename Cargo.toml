@@ -1,0 +1,8 @@
+[package]
+name = "rpg"
+version = "0.1.0"
+authors = ["qriz"]
+
+[dependencies]
+rand = "0.3.0"
+ncurses = "5.84.0"
