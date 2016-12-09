@@ -42,18 +42,20 @@ pub trait Generator {
 
 #[test]
 fn test_damage() {
+    let mut log = Log {messages : Vec::new()};
     let me = Entity::new();
     let mut enemy = Entity::new();
 
     assert_eq!(enemy.calculate_max_life(), enemy.current_life);
 
-    Fight::weapon_hit(RndGenerator, &me, &mut enemy);
+    Fight::weapon_hit(&mut log, RndGenerator, &me, &mut enemy);
 
     assert!(enemy.current_life < enemy.calculate_max_life());
 }
 
 #[test]
 fn test_death() {
+    let mut log = Log {messages : Vec::new()};
     let me = Entity::new();
     let mut enemy = Entity::new();
 
@@ -61,7 +63,7 @@ fn test_death() {
 
     assert ! ( !enemy.is_death());
 
-    Fight::weapon_hit(RndGenerator, & me, & mut enemy);
+    Fight::weapon_hit(&mut log, RndGenerator, &me, & mut enemy);
 
     assert ! (enemy.is_death());
 }

@@ -71,62 +71,68 @@ impl Backpack {
     }
 }
 
-#[test]
-fn test_backpack() {
-    let mut backpack = Backpack::new();
-    let add_index = BACKPACK_SIZE / 2;
-    let special_name = "Magic Shirt";
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::item::*;
 
-    // At the beginnning Backpack is empty.
-    assert_eq!(true, backpack.has_space());
+    #[test]
+    fn test_backpack() {
+        let mut backpack = Backpack::new();
+        let add_index = BACKPACK_SIZE / 2;
+        let special_name = "Magic Shirt";
 
-    // Add Items to Backpack.
-    for n in 0..BACKPACK_SIZE {
-        let result = backpack.add_item(create_shorts(n));
+        // At the beginnning Backpack is empty.
+        assert_eq!(true, backpack.has_space());
 
+        // Add Items to Backpack.
+        for n in 0..BACKPACK_SIZE {
+            let result = backpack.add_item(create_shorts(n));
+
+            assert_good_result(result);
+        }
+
+        // Backpack is full.
+        assert_eq!(false, backpack.has_space());
+
+        let too_much = create_special(special_name.to_string());
+
+        // Try to add something, it has to fail.
+        let result = backpack.add_item(too_much);
+        let too_much = assert_bad_result(result);
+
+        // Remove item now there is space.
+        backpack.remove_item(add_index);
+        assert_eq!(true, backpack.has_space());
+
+        // Add "old" item again, backpack is full again.
+        let result = backpack.add_item(too_much);
         assert_good_result(result);
+        assert_eq!(false, backpack.has_space());
+
+        // New Item is in correct position.
+        assert_eq!(special_name, backpack.items[add_index].name);
     }
 
-    // Backpack is full.
-    assert_eq!(false, backpack.has_space());
-
-    let too_much = create_special(special_name.to_string());
-
-    // Try to add something, it has to fail.
-    let result = backpack.add_item(too_much);
-    let too_much = assert_bad_result(result);
-
-    // Remove item now there is space.
-    backpack.remove_item(add_index);
-    assert_eq!(true, backpack.has_space());
-
-    // Add "old" item again, backpack is full again.
-    let result = backpack.add_item(too_much);
-    assert_good_result(result);
-    assert_eq!(false, backpack.has_space());
-
-    // New Item is in correct position.
-    assert_eq!(special_name, backpack.items[add_index].name);
-}
-
-fn assert_good_result(result: Result<(), Item>) {
-    match result {
-        Result::Ok(_) => (),
-        Result::Err(item) => panic!("Could not add Item {}, but should have", item.name),
+    fn assert_good_result(result: Result<(), Item>) {
+        match result {
+            Result::Ok(_) => (),
+            Result::Err(item) => panic!("Could not add Item {}, but should have", item.name),
+        }
     }
-}
 
-fn assert_bad_result(result: Result<(), Item>) -> Item {
-    match result {
-        Result::Ok(_) => panic!("Could add Item, but should not have"),
-        Result::Err(item) => item,
+    fn assert_bad_result(result: Result<(), Item>) -> Item {
+        match result {
+            Result::Ok(_) => panic!("Could add Item, but should not have"),
+            Result::Err(item) => item,
+        }
     }
-}
 
-fn create_special(name: String) -> Item {
-    Item { item_type: Type::Chest, name: name, modifications: Vec::new() }
-}
+    fn create_special(name: String) -> Item {
+        Item { item_type: Type::Chest, name: name, modifications: Vec::new() }
+    }
 
-fn create_shorts(n: usize) -> Item {
-    Item { item_type: Type::Legs, name: format!("{} Shorts", n), modifications: Vec::new() }
+    fn create_shorts(n: usize) -> Item {
+        Item { item_type: Type::Legs, name: format!("{} Shorts", n), modifications: Vec::new() }
+    }
 }

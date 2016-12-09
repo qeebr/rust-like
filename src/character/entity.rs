@@ -3,7 +3,7 @@ use super::item::*;
 use super::backpack::*;
 
 pub struct Entity {
-    pub name:String,
+    pub name: String,
     pub base_stats: Stats,
 
     pub head_item: Item,
@@ -24,7 +24,7 @@ impl Entity {
 
         let mut entity = Entity {
             //No-Name.
-            name : "Unknown".to_string(),
+            name: "Unknown".to_string(),
 
             //Base-Stats.
             base_stats: base_stats,
@@ -144,4 +144,3 @@ fn test_add_stat() {
 
     assert_eq!(8, stats.vitality);
 }
-
