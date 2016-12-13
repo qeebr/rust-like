@@ -8,6 +8,7 @@ pub mod ui;
 pub mod log;
 
 use character::entity::*;
+use character::monster::*;
 use level::level::*;
 use ui::window::*;
 use combat::effect::*;
@@ -15,24 +16,17 @@ use combat::fight::*;
 use log::*;
 
 fn main() {
+    game();
+}
+
+fn game<'a>() {
     let mut log = Log { messages : Vec::new() };
     let map = Level::new();
     let mut player = Entity::new();
     player.name = "qriz".to_string();
 
-    let mut enemies : Vec<Entity> = Vec::new();
+    let mut enemies : Vec<Monster> = Vec::new();
     let mut effect_list : Vec<WeaponAttack> = Vec::new();
-
-    let mut enemy = Entity::new();
-    enemy.name = "Zombie".to_string();
-    enemy.pos_row = 3;
-    enemy.pos_col = 3;
-    enemy.base_stats.vitality = 1;
-    enemy.current_life = enemy.calculate_max_life();
-
-    enemies.push(enemy);
-
-    enemy.pos_row = 4;
 
     Window::init();
 
@@ -40,9 +34,20 @@ fn main() {
     for meta_row in &map.meta {
         let mut col_index = 0;
         for meta_col in meta_row {
-            if meta_col == &Tile::PlSpawn {
-                player.pos_row = row_index;
-                player.pos_col = col_index;
+            match meta_col {
+                &Tile::PlSpawn => {
+                    player.pos_row = row_index;
+                    player.pos_col = col_index;
+                },
+                &Tile::MnSpawn{mn_type, difficulty} => {
+                    let mut monster = create_monster(&player, mn_type, difficulty);
+
+                    monster.entity.pos_row = row_index;
+                    monster.entity.pos_col = col_index;
+
+                    enemies.push(monster);
+                },
+                _ => (),
             }
 
             col_index += 1;
@@ -70,13 +75,100 @@ fn main() {
             Input::Quit => break,
         }
 
+        handle_ki(&mut log, &map, &mut player, &mut enemies, &mut effect_list);
+
         Window::draw(&mut log, &map, &player, &enemies, &effect_list);
     }
 
     Window::clear();
 }
 
-fn handle_attack(log : &mut Log, player : &Entity, enemies : &mut Vec<Entity>, effect_list : &mut Vec<WeaponAttack>, direction : Input) {
+fn create_monster(player : &Entity, mn_type : u32, diff : u32) -> Monster {
+    let mut enemy = Entity::new();
+    enemy.name = "Zombie".to_string();
+    enemy.pos_row = 5;
+    enemy.pos_col = 5;
+    enemy.base_stats.vitality = 1;
+    enemy.current_life = enemy.calculate_max_life();
+
+    Monster::new(MonsterType::Zombie, Difficulty::Easy, enemy)
+}
+
+fn handle_ki(log : &mut Log, map: &Level, player : &mut Entity, enemies : &mut Vec<Monster>, effect_list : &mut Vec<WeaponAttack>) {
+    let size = enemies.len();
+    for index in 0..size {
+        if enemies[index].entity.is_death() {
+            continue;
+        }
+
+        let row_diff = player.pos_row - enemies[index].entity.pos_row;
+        let col_diff = player.pos_col - enemies[index].entity.pos_col;
+
+        let distance = ((row_diff * row_diff + col_diff * col_diff) as f32).sqrt();
+
+        //GameCode!
+        if distance <= 1f32 {
+            let attack = WeaponAttack::new(&enemies[index].entity, AttackDirection::North);
+
+            Fight::weapon_hit(log, RndGenerator, &enemies[index].entity, player);
+
+            effect_list.push(attack);
+
+        } else if distance <= 4f32 {
+            let direction = if row_diff <= col_diff {
+                if row_diff < 0 {
+                    Input::MoveUp
+                } else {
+                    Input::MoveDown
+                }
+            } else {
+                if col_diff < 0 {
+                    Input::MoveLeft
+                } else {
+                    Input::MoveRight
+                }
+            };
+
+            let mut row_diff = enemies[index].entity.pos_row;
+            let mut col_diff = enemies[index].entity.pos_col;
+
+            match direction {
+                Input::MoveUp => row_diff -= 1,
+                Input::MoveDown => row_diff += 1,
+                Input::MoveLeft => col_diff -= 1,
+                Input::MoveRight => col_diff += 1,
+
+                _ => unreachable!(),
+            }
+
+            //Collision with Wall uncool.
+            if map.level[row_diff as usize][col_diff as usize] == Tile::Wall {
+                continue;
+            }
+
+            if player.pos_row == row_diff && player.pos_col == col_diff {
+                continue;
+            }
+
+            for innerIndex in 0..size {
+                if innerIndex == index {
+                    continue;
+                }
+
+                if !enemies[innerIndex].entity.is_death() && row_diff == enemies[innerIndex].entity.pos_row && col_diff == enemies[innerIndex].entity.pos_col {
+                    break;
+                }
+            }
+
+            let mut mut_enemy = &mut enemies[index];
+            mut_enemy.entity.pos_row = row_diff as i32;
+            mut_enemy.entity.pos_col = col_diff as i32;
+
+        }
+    }
+}
+
+fn handle_attack(log : &mut Log, player : &Entity, enemies : &mut Vec<Monster>, effect_list : &mut Vec<WeaponAttack>, direction : Input) {
     let attack_direction = match direction {
         Input::AttackUp => AttackDirection::North,
         Input::AttackDown => AttackDirection::South,
@@ -89,9 +181,9 @@ fn handle_attack(log : &mut Log, player : &Entity, enemies : &mut Vec<Entity>, e
 
     for mut enemy in enemies {
         for &(row, col) in &attack.area {
-            if enemy.pos_row == row && enemy.pos_col == col {
+            if enemy.entity.pos_row == row && enemy.entity.pos_col == col {
 
-                Fight::weapon_hit(log, RndGenerator, player, &mut enemy);
+                Fight::weapon_hit(log, RndGenerator, player, &mut enemy.entity);
             }
         }
     }
@@ -99,7 +191,7 @@ fn handle_attack(log : &mut Log, player : &Entity, enemies : &mut Vec<Entity>, e
     effect_list.push(attack);
 }
 
-fn handle_move(map: &Level, player: &mut Entity, enemies : &Vec<Entity>, direction: Input) {
+fn handle_move(map: &Level, player: &mut Entity, enemies : &Vec<Monster>, direction: Input) {
     let mut row_diff = player.pos_row;
     let mut col_diff = player.pos_col;
 
@@ -119,7 +211,7 @@ fn handle_move(map: &Level, player: &mut Entity, enemies : &Vec<Entity>, directi
 
     //Collision with alive entity uncool.
     for enemy in enemies {
-        if !enemy.is_death() && row_diff == enemy.pos_row && col_diff == enemy.pos_col {
+        if !enemy.entity.is_death() && row_diff == enemy.entity.pos_row && col_diff == enemy.entity.pos_col {
             return;
         }
     }

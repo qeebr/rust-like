@@ -3,6 +3,7 @@ extern crate ncurses;
 use ncurses::*;
 use super::super::level::level::*;
 use super::super::character::entity::*;
+use super::super::character::monster::*;
 use super::super::combat::effect::*;
 use super::super::log::*;
 
@@ -20,7 +21,7 @@ impl Window {
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     }
 
-    pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Entity>, effect_list: &Vec<WeaponAttack>) {
+    pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Monster>, effect_list: &Vec<WeaponAttack>) {
         /* Get the screen bounds. */
         let mut max_x = 0;
         let mut max_y = 0;
@@ -41,7 +42,7 @@ impl Window {
         }
 
         for enemy in enemies {
-            mv(enemy.pos_row, enemy.pos_col);
+            mv(enemy.entity.pos_row, enemy.entity.pos_col);
             addch(resolve_enemy(enemy));
         }
 
@@ -110,8 +111,8 @@ fn resolve_input(input: i32) -> Input {
     }
 }
 
-fn resolve_enemy(enemy: &Entity) -> u32{
-    if enemy.is_death() {
+fn resolve_enemy(enemy: &Monster) -> u32{
+    if enemy.entity.is_death() {
         '_' as u32
     } else {
         '|' as u32
@@ -132,5 +133,6 @@ fn resolve_tile(tile: &Tile) -> u32 {
         &Tile::Wall => '#' as u32,
         &Tile::Nothing => ' ' as u32,
         &Tile::PlSpawn => '!' as u32,
+        &Tile::MnSpawn{..} => '?' as u32,
     }
 }

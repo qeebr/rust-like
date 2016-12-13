@@ -10,6 +10,7 @@ pub enum Tile {
     Floor,
     Wall,
     PlSpawn,
+    MnSpawn { mn_type : u32, difficulty : u32 },
 }
 
 impl Level {
@@ -48,7 +49,7 @@ impl Level {
         meta.push(row);
         let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing];
         meta.push(row);
-        let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing];
+        let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::MnSpawn{mn_type:1,difficulty:1}, Tile::Nothing, Tile::Nothing];
         meta.push(row);
         let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing];
         meta.push(row);
