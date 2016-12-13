@@ -20,13 +20,13 @@ fn main() {
 }
 
 fn game<'a>() {
-    let mut log = Log { messages : Vec::new() };
+    let mut log = Log { messages: Vec::new() };
     let map = Level::new();
     let mut player = Entity::new();
     player.name = "qriz".to_string();
 
-    let mut enemies : Vec<Monster> = Vec::new();
-    let mut effect_list : Vec<WeaponAttack> = Vec::new();
+    let mut enemies: Vec<Monster> = Vec::new();
+    let mut effect_list: Vec<WeaponAttack> = Vec::new();
 
     Window::init();
 
@@ -39,7 +39,7 @@ fn game<'a>() {
                     player.pos_row = row_index;
                     player.pos_col = col_index;
                 },
-                &Tile::MnSpawn{mn_type, difficulty} => {
+                &Tile::MnSpawn { mn_type, difficulty } => {
                     let mut monster = create_monster(&player, mn_type, difficulty);
 
                     monster.entity.pos_row = row_index;
@@ -83,7 +83,7 @@ fn game<'a>() {
     Window::clear();
 }
 
-fn create_monster(player : &Entity, mn_type : u32, diff : u32) -> Monster {
+fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     let mut enemy = Entity::new();
     enemy.name = "Zombie".to_string();
     enemy.pos_row = 5;
@@ -94,7 +94,7 @@ fn create_monster(player : &Entity, mn_type : u32, diff : u32) -> Monster {
     Monster::new(MonsterType::Zombie, Difficulty::Easy, enemy)
 }
 
-fn handle_ki(log : &mut Log, map: &Level, player : &mut Entity, enemies : &mut Vec<Monster>, effect_list : &mut Vec<WeaponAttack>) {
+fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>) {
     let size = enemies.len();
     for index in 0..size {
         if enemies[index].entity.is_death() {
@@ -108,25 +108,51 @@ fn handle_ki(log : &mut Log, map: &Level, player : &mut Entity, enemies : &mut V
 
         //GameCode!
         if distance <= 1f32 {
-            let attack = WeaponAttack::new(&enemies[index].entity, AttackDirection::North);
+            let direction = if row_diff == 1 {
+                AttackDirection::South
+            } else if row_diff == -1 {
+                AttackDirection::North
+            } else if col_diff == 1 {
+                AttackDirection::East
+            } else if col_diff == -1 {
+                AttackDirection::West
+            } else {
+                unreachable!();
+            };
+
+            let attack = WeaponAttack::new(&enemies[index].entity, direction);
 
             Fight::weapon_hit(log, RndGenerator, &enemies[index].entity, player);
 
             effect_list.push(attack);
 
         } else if distance <= 4f32 {
-            let direction = if row_diff <= col_diff {
-                if row_diff < 0 {
-                    Input::MoveUp
-                } else {
+            let direction = if row_diff > 0 && col_diff > 0 {
+                if row_diff > col_diff {
                     Input::MoveDown
-                }
-            } else {
-                if col_diff < 0 {
-                    Input::MoveLeft
                 } else {
                     Input::MoveRight
                 }
+            } else if row_diff > 0 && col_diff < 0 {
+                if row_diff > -1 * col_diff {
+                    Input::MoveDown
+                } else {
+                    Input::MoveLeft
+                }
+            } else if row_diff < 0 && col_diff < 0 {
+                if row_diff < col_diff {
+                    Input::MoveUp
+                } else {
+                    Input::MoveLeft
+                }
+            } else if row_diff < 0 && col_diff > 0 {
+                if -1 * row_diff > col_diff {
+                    Input::MoveUp
+                } else {
+                    Input::MoveRight
+                }
+            } else {
+                Input::Nothing
             };
 
             let mut row_diff = enemies[index].entity.pos_row;
@@ -138,7 +164,7 @@ fn handle_ki(log : &mut Log, map: &Level, player : &mut Entity, enemies : &mut V
                 Input::MoveLeft => col_diff -= 1,
                 Input::MoveRight => col_diff += 1,
 
-                _ => unreachable!(),
+                _ => { continue; },
             }
 
             //Collision with Wall uncool.
@@ -163,12 +189,11 @@ fn handle_ki(log : &mut Log, map: &Level, player : &mut Entity, enemies : &mut V
             let mut mut_enemy = &mut enemies[index];
             mut_enemy.entity.pos_row = row_diff as i32;
             mut_enemy.entity.pos_col = col_diff as i32;
-
         }
     }
 }
 
-fn handle_attack(log : &mut Log, player : &Entity, enemies : &mut Vec<Monster>, effect_list : &mut Vec<WeaponAttack>, direction : Input) {
+fn handle_attack(log: &mut Log, player: &Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, direction: Input) {
     let attack_direction = match direction {
         Input::AttackUp => AttackDirection::North,
         Input::AttackDown => AttackDirection::South,
@@ -182,7 +207,6 @@ fn handle_attack(log : &mut Log, player : &Entity, enemies : &mut Vec<Monster>, 
     for mut enemy in enemies {
         for &(row, col) in &attack.area {
             if enemy.entity.pos_row == row && enemy.entity.pos_col == col {
-
                 Fight::weapon_hit(log, RndGenerator, player, &mut enemy.entity);
             }
         }
@@ -191,7 +215,7 @@ fn handle_attack(log : &mut Log, player : &Entity, enemies : &mut Vec<Monster>, 
     effect_list.push(attack);
 }
 
-fn handle_move(map: &Level, player: &mut Entity, enemies : &Vec<Monster>, direction: Input) {
+fn handle_move(map: &Level, player: &mut Entity, enemies: &Vec<Monster>, direction: Input) {
     let mut row_diff = player.pos_row;
     let mut col_diff = player.pos_col;
 
