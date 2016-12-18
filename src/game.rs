@@ -1,5 +1,7 @@
 use super::character::entity::*;
 use super::character::monster::*;
+use super::character::item::*;
+use super::character::backpack::*;
 use super::level::level::*;
 use super::ui::window::*;
 use super::combat::effect::*;
@@ -45,29 +47,122 @@ pub fn game() {
 
     Window::draw(&mut log, &map, &player, &enemies, &effect_list);
 
+    let mut game_state = Action::Game;
+    let mut backpack_index: usize = 0;
     loop {
-        effect_list.clear();
         let input = Window::get_input();
 
-        match input {
-            Input::MoveUp | Input::MoveDown | Input::MoveLeft | Input::MoveRight => {
-                handle_move(&map, &mut player, &enemies, input);
+        let next_game_state = match game_state {
+            Action::Game => {
+                handle_game_state(&mut log, &map, &mut player, &mut enemies, &mut effect_list, input)
             },
+            Action::Loot => {
+                handle_loop_state(&mut log, &map, &mut player, &mut enemies, &mut backpack_index, input)
+            }
+            _ => panic!("Only two known GameStates"),
+        };
 
-            Input::AttackUp | Input::AttackDown | Input::AttackLeft | Input::AttackRight => {
-                handle_attack(&mut log, &player, &mut enemies, &mut effect_list, input);
-            },
-
-            Input::Nothing => {},
-            Input::Quit => break,
+        if game_state == Action::Game && next_game_state == Action::Loot {
+            backpack_index = 0;
         }
 
-        handle_ki(&mut log, &map, &mut player, &mut enemies, &mut effect_list);
+        if next_game_state == Action::Quit {
+            break;
+        } else {
+            game_state = next_game_state;
+        }
 
         Window::draw(&mut log, &map, &player, &enemies, &effect_list);
+
+        if game_state == Action::Loot {
+            let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col);
+
+            match enemy {
+                Option::Some(x) =>Window::draw_loot(&x.entity.backpack, backpack_index),
+                _ => panic!("cannot loot"),
+            }
+        }
     }
 
     Window::clear();
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum Action {
+    Game,
+    Loot,
+    Quit,
+}
+
+fn handle_loop_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, input : Input) -> Action {
+    let mut enemy_index = enemies.iter().position(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
+
+
+    match input {
+        Input::MoveUp => {
+            if *backpack_index > 0 {
+                *backpack_index -= 1;
+            }
+        },
+        Input::MoveDown => {
+            if !enemies[enemy_index].entity.backpack.empty_slot(*backpack_index +1) {
+                *backpack_index += 1;
+            }
+        },
+
+        Input::Use => {
+            if player.backpack.has_space() {
+                let item = enemies[enemy_index].entity.backpack.items[*backpack_index].clone();
+                log.add_message(format!("Item {} added to Backpack", item.name));
+
+                enemies[enemy_index].entity.backpack.remove_item(*backpack_index);
+                player.backpack.add_item(item);
+            } else {
+                log.add_message("Backpack ist full!".to_string());
+            }
+        }
+
+        Input::Quit => {
+            return Action::Game;
+        }
+        _ => {},
+    }
+
+
+    Action::Loot
+}
+
+fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, input : Input) -> Action{
+    effect_list.clear();
+
+    match input {
+        Input::MoveUp | Input::MoveDown | Input::MoveLeft | Input::MoveRight => {
+            handle_move(map, player, enemies, input);
+        },
+
+        Input::AttackUp | Input::AttackDown | Input::AttackLeft | Input::AttackRight => {
+            handle_attack(log, player, enemies, effect_list, input);
+        },
+
+        Input::Use => {
+            let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col);
+
+            match enemy {
+                Option::Some(..) => {
+                    return Action::Loot
+                },
+                _ => {},
+            }
+        },
+
+        Input::Quit => {return Action::Quit},
+
+        Input::Nothing => {},
+    }
+
+    handle_ki(log, map, player, enemies, effect_list);
+
+    Action::Game
 }
 
 fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
@@ -77,6 +172,50 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     enemy.pos_col = 5;
     enemy.base_stats.vitality = 1;
     enemy.current_life = enemy.calculate_max_life();
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger2".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger3".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger4".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger5".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger6".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger7".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger8".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger9".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger10".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
+
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let item = Item { item_type: Type::Weapon, name: "Dagger11".to_string(), modifications: modifications };
+    enemy.backpack.add_item(item);
 
     Monster::new(MonsterType::Zombie, Difficulty::Easy, enemy)
 }

@@ -3,12 +3,12 @@ use super::item::*;
 pub const BACKPACK_SIZE: usize = 20;
 
 pub struct Backpack {
-    items: [Item; BACKPACK_SIZE],
+    pub items: Vec<Item>,
 }
 
 impl Backpack {
     pub fn new() -> Backpack {
-        let items = [
+        let items = vec![
             get_free(),
             get_free(),
             get_free(),
@@ -56,7 +56,8 @@ impl Backpack {
     }
 
     pub fn remove_item(&mut self, index: usize) {
-        self.items[index] = get_free();
+        self.items.remove(index);
+        self.items.push(get_free());
     }
 
     pub fn has_space(&self) -> bool {
@@ -68,6 +69,28 @@ impl Backpack {
         }
 
         false
+    }
+
+    pub fn empty_slot(&self, index: usize) -> bool {
+        if index >= 0 && index < BACKPACK_SIZE {
+            return self.items[index].item_type == Type::Nothing
+        }
+
+        false
+    }
+
+    pub fn size(&self) -> usize {
+        let mut counter = 0 as usize;
+
+        for index in 0 .. BACKPACK_SIZE {
+            if self.empty_slot(index) {
+                break;
+            }
+
+            counter+=1;
+        }
+
+        counter
     }
 }
 
