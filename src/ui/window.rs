@@ -6,6 +6,7 @@ use super::super::character::entity::*;
 use super::super::character::monster::*;
 use super::super::character::backpack::*;
 use super::super::character::item::*;
+use super::super::character::stats::*;
 use super::super::combat::effect::*;
 use super::super::log::*;
 
@@ -21,6 +22,63 @@ impl Window {
 
 
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
+    }
+
+    pub fn draw_item(item: &Item) {
+        let item_offset_row = 0;
+        let item_offset_col = 20;
+
+        let mut row = item_offset_row;
+        mvprintw(row as i32, item_offset_col, &item.name);
+        row += 1;
+
+        let type_str = match item.item_type {
+            Type::Head => {
+                "Head"
+            },
+            Type::Chest => {
+                "Chest"
+            },
+            Type::Legs => {
+                "Legs"
+            },
+            Type::Weapon => {
+                "Weapon"
+            },
+            Type::Nothing => {
+                "Nothing"
+            }
+        };
+        mvprintw(row as i32, item_offset_col, &type_str);
+        row += 1;
+
+        for attribute in &item.modifications {
+            match attribute {
+                &StatsMod::Damage{min, max} => {
+                    mvprintw(row as i32, item_offset_col, &format!("Damage {}-{}", min, max));
+                },
+                &StatsMod::AttackSpeed(val) => {
+                    mvprintw(row as i32, item_offset_col, &format!("Speed {}", val));
+                }
+                &StatsMod::Add(val) => {
+                    match val {
+                        Stat::Defense(val) => {
+                            mvprintw(row as i32, item_offset_col, &format!("Defense {}", val));
+                        },
+                        Stat::Speed(val) => {
+                            mvprintw(row as i32, item_offset_col, &format!("Speed {}", val));
+                        },
+                        Stat::Strength(val) => {
+                            mvprintw(row as i32, item_offset_col, &format!("Strength {}", val));
+                        },
+                        Stat::Vitality(val) => {
+                            mvprintw(row as i32, item_offset_col, &format!("Vitality {}", val));
+                        }
+                    }
+                }
+            }
+            row += 1;
+        }
     }
 
     pub fn draw_loot(backpack: &Backpack, backpack_index: usize) {
@@ -55,6 +113,9 @@ impl Window {
             mvprintw((counter + loot_offset_row) as i32, 1 + loot_offset_col, "Empty");
             counter += 1;
         }
+
+        //Draw full item
+        Window::draw_item(&backpack.items[backpack_index]);
     }
 
     pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Monster>, effect_list: &Vec<WeaponAttack>) {
