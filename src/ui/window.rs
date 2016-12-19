@@ -24,31 +24,36 @@ impl Window {
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     }
 
+    pub fn draw_entity(player : &Entity, character_pointer: Type) {
+        let character_offset_row = 0;
+        let character_offset_col = 10;
+
+        let mut row = character_offset_row;
+        mvprintw(row as i32, character_offset_col, &format!("Player: {}", player.name));
+        row += 1;
+
+        mvprintw(row as i32, character_offset_col, &format!("Head: {}", player.head_item.name));
+        row += 1;
+
+        mvprintw(row as i32, character_offset_col, &format!("Chest: {}", player.chest_item.name));
+        row += 1;
+
+        mvprintw(row as i32, character_offset_col, &format!("Legs: {}", player.leg_item.name));
+        row += 1;
+
+        mvprintw(row as i32, character_offset_col, &format!("Weapon: {}", player.weapon.name));
+        row += 1;
+    }
+
     pub fn draw_item(item: &Item) {
         let item_offset_row = 0;
-        let item_offset_col = 20;
+        let item_offset_col = 35;
 
         let mut row = item_offset_row;
         mvprintw(row as i32, item_offset_col, &item.name);
         row += 1;
 
-        let type_str = match item.item_type {
-            Type::Head => {
-                "Head"
-            },
-            Type::Chest => {
-                "Chest"
-            },
-            Type::Legs => {
-                "Legs"
-            },
-            Type::Weapon => {
-                "Weapon"
-            },
-            Type::Nothing => {
-                "Nothing"
-            }
-        };
+        let type_str = resolve_type(item.item_type);
         mvprintw(row as i32, item_offset_col, &type_str);
         row += 1;
 
@@ -212,6 +217,26 @@ fn resolve_input(input: i32) -> Input {
         101 => Input::Use, //101 is E.
 
         _ => Input::Nothing,
+    }
+}
+
+fn resolve_type(item_type : Type) -> &'static str {
+    match item_type {
+        Type::Head => {
+            "Head"
+        },
+        Type::Chest => {
+            "Chest"
+        },
+        Type::Legs => {
+            "Legs"
+        },
+        Type::Weapon => {
+            "Weapon"
+        },
+        Type::Nothing => {
+            "Nothing"
+        }
     }
 }
 

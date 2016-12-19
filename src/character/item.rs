@@ -51,18 +51,6 @@ pub enum StatsMod {
     AttackSpeed(i32),
 }
 
-pub fn get_head() -> Item {
-    new_plain_item(Type::Head, "Head".to_string())
-}
-
-pub fn get_chest() -> Item {
-    new_plain_item(Type::Chest, "Chest".to_string())
-}
-
-pub fn get_legs() -> Item {
-    new_plain_item(Type::Legs, "Legs".to_string())
-}
-
 pub fn get_fist() -> Item {
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     Item { item_type: Type::Weapon, name: "Fists".to_string(), modifications: modifications }
@@ -117,22 +105,24 @@ fn item_is_weapon(given_item: &Item) -> bool {
 
 #[test]
 fn test_clothing_check() {
-    let legs = get_legs();
+    let legs = Item { item_type: Type::Legs, name: "Legs".to_string(), modifications: Vec::new() };
 
     assert_eq!(true, item_is_clothing(&legs));
 
-    let weapon = get_fist();
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let weapon = Item { item_type: Type::Weapon, name: "Fists".to_string(), modifications: modifications };
 
     assert_eq!(false, item_is_clothing(&weapon));
 }
 
 #[test]
 fn test_weapon_check() {
-    let fists = get_fist();
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
+    let fists = Item { item_type: Type::Weapon, name: "Fists".to_string(), modifications: modifications };
 
     assert_eq!(true, item_is_weapon(&fists));
 
-    let legs = get_legs();
+    let legs = Item { item_type: Type::Legs, name: "Legs".to_string(), modifications: Vec::new() };
 
     assert_eq!(false, item_is_weapon(&legs));
 }

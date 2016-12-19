@@ -49,6 +49,9 @@ pub fn game() {
 
     let mut game_state = Action::Game;
     let mut backpack_index: usize = 0;
+    let mut inventory_pointer = InventoryPointer::Backpack;
+    let mut character_pointer = Type::Head;
+
     loop {
         let input = Window::get_input();
 
@@ -59,10 +62,16 @@ pub fn game() {
             Action::Loot => {
                 handle_loop_state(&mut log, &map, &mut player, &mut enemies, &mut backpack_index, input)
             }
-            _ => panic!("Only two known GameStates"),
+            Action::Inventory => {
+                handle_inventory_state(&mut log, &mut player, &mut inventory_pointer, &mut backpack_index, &mut character_pointer, input)
+            }
+            Action::Quit => {
+                break;
+            }
         };
 
-        if game_state == Action::Game && next_game_state == Action::Loot {
+        if (game_state == Action::Game && next_game_state == Action::Loot) ||
+            (game_state == Action::Game && next_game_state == Action::Inventory) {
             backpack_index = 0;
         }
 
@@ -75,26 +84,73 @@ pub fn game() {
         Window::draw(&mut log, &map, &player, &enemies, &effect_list);
 
         if game_state == Action::Loot {
-            let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col);
+            let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
 
-            match enemy {
-                Option::Some(x) =>Window::draw_loot(&x.entity.backpack, backpack_index),
-                _ => panic!("cannot loot"),
-            }
+            Window::draw_loot(&enemy.entity.backpack, backpack_index)
+        } else if game_state == Action::Inventory {
+
+            Window::draw_loot(&player.backpack, backpack_index);
+            Window::draw_entity(&player, character_pointer);
         }
+
+        //Add Player backpack to drawing loop so player can equip looted items!
     }
 
     Window::clear();
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+enum InventoryPointer {
+    Backpack,
+    Character
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum Action {
     Game,
     Loot,
+    Inventory,
     Quit,
 }
 
-fn handle_loop_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, input : Input) -> Action {
+fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer: &mut InventoryPointer, backpack_index: &mut usize, character_pointer: &mut Type, input: Input) -> Action {
+    match inventory_pointer {
+        &mut InventoryPointer::Backpack => {
+            match input {
+                Input::MoveUp => {
+                    if *backpack_index > 0 {
+                        *backpack_index -= 1;
+                    }
+                },
+                Input::MoveDown => {
+                    if !player.backpack.empty_slot(*backpack_index+1) {
+                        *backpack_index+=1;
+                    }
+                },
+                Input::Use => {
+                    let new_item = player.backpack.items[*backpack_index].clone();
+                    player.backpack.remove_item(*backpack_index);
+                    let old_item = player.equip(new_item);
+
+                    if old_item.item_type != Type::Nothing {
+                        player.backpack.insert_item(*backpack_index, old_item);
+                    }
+                },
+                Input::Quit => {return Action::Game},
+                _ => {},
+            };
+
+        },
+        &mut InventoryPointer::Character => {
+            //GO ON HERE!
+            //btw. remove the damn head/legs items.. there is just plain nothing. xD
+        },
+    }
+
+    Action::Inventory
+}
+
+fn handle_loop_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, input: Input) -> Action {
     let mut enemy_index = enemies.iter().position(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
 
 
@@ -105,7 +161,7 @@ fn handle_loop_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
             }
         },
         Input::MoveDown => {
-            if !enemies[enemy_index].entity.backpack.empty_slot(*backpack_index +1) {
+            if !enemies[enemy_index].entity.backpack.empty_slot(*backpack_index + 1) {
                 *backpack_index += 1;
             }
         },
@@ -132,7 +188,7 @@ fn handle_loop_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
     Action::Loot
 }
 
-fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, input : Input) -> Action{
+fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, input: Input) -> Action {
     effect_list.clear();
 
     match input {
@@ -151,11 +207,13 @@ fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
                 Option::Some(..) => {
                     return Action::Loot
                 },
-                _ => {},
+                _ => {
+                    return Action::Inventory
+                },
             }
         },
 
-        Input::Quit => {return Action::Quit},
+        Input::Quit => { return Action::Quit },
 
         Input::Nothing => {},
     }
@@ -251,7 +309,6 @@ fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<
             Fight::weapon_hit(log, RndGenerator, &enemies[index].entity, player);
 
             effect_list.push(attack);
-
         } else if distance <= 4f32 {
             let direction = if row_diff > 0 && col_diff > 0 {
                 if row_diff > col_diff {

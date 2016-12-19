@@ -55,6 +55,11 @@ impl Backpack {
         Result::Ok(())
     }
 
+    pub fn insert_item(&mut self, backpack_index : usize, old_item : Item) {
+        self.items.insert(backpack_index, old_item);
+        self.items.remove(BACKPACK_SIZE);
+    }
+
     pub fn remove_item(&mut self, index: usize) {
         self.items.remove(index);
         self.items.push(get_free());
@@ -134,7 +139,7 @@ mod tests {
         assert_eq!(false, backpack.has_space());
 
         // New Item is in correct position.
-        assert_eq!(special_name, backpack.items[add_index].name);
+        assert_eq!(special_name, backpack.items[BACKPACK_SIZE-1].name);
     }
 
     fn assert_good_result(result: Result<(), Item>) {

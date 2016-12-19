@@ -30,7 +30,7 @@ impl Entity {
             base_stats: base_stats,
 
             //Items.
-            head_item: get_head(), chest_item: get_chest(), leg_item: get_legs(), weapon: get_fist(),
+            head_item: get_free(), chest_item: get_free(), leg_item: get_free(), weapon: get_free(),
 
             //Position.
             pos_row: 0, pos_col: 0,
@@ -87,7 +87,7 @@ impl Entity {
                 change_item(&mut self.weapon, new_item)
             },
             &Type::Nothing => {
-                panic!("Cannot equip Item {:?}", new_item)
+                new_item
             }
         }
     }
@@ -126,13 +126,13 @@ fn test_change_item() {
     attributes.push(StatsMod::Add(Stat::Defense(10)));
     let new_item = Item { modifications: attributes, name: "Helm".to_string(), item_type: Type::Head };
 
-    assert_eq!("Head", player_entity.head_item.name);
+    assert_eq!("Free", player_entity.head_item.name);
     assert_eq!("Helm", new_item.name);
 
     let old_item = change_item(&mut player_entity.head_item, new_item);
 
     assert_eq!("Helm", player_entity.head_item.name);
-    assert_eq!("Head", old_item.name);
+    assert_eq!("Free", old_item.name);
 }
 
 #[test]
