@@ -24,25 +24,65 @@ impl Window {
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     }
 
-    pub fn draw_entity(player : &Entity, character_pointer: Type) {
+    pub fn draw_entity(player : &Entity, character_pointer: Type, active : bool) {
         let character_offset_row = 0;
         let character_offset_col = 10;
 
         let mut row = character_offset_row;
-        mvprintw(row as i32, character_offset_col, &format!("Player: {}", player.name));
+        mvprintw(row as i32, character_offset_col, &format!(" Player:   {}", player.name));
         row += 1;
 
-        mvprintw(row as i32, character_offset_col, &format!("Head: {}", player.head_item.name));
+        mvprintw(row as i32, character_offset_col, &format!(" Head:     {}", player.head_item.name));
         row += 1;
 
-        mvprintw(row as i32, character_offset_col, &format!("Chest: {}", player.chest_item.name));
+        mvprintw(row as i32, character_offset_col, &format!(" Chest:    {}", player.chest_item.name));
         row += 1;
 
-        mvprintw(row as i32, character_offset_col, &format!("Legs: {}", player.leg_item.name));
+        mvprintw(row as i32, character_offset_col, &format!(" Legs:     {}", player.leg_item.name));
         row += 1;
 
-        mvprintw(row as i32, character_offset_col, &format!("Weapon: {}", player.weapon.name));
+        mvprintw(row as i32, character_offset_col, &format!(" Weapon:   {}", player.weapon.name));
         row += 1;
+
+        mvprintw(row as i32, character_offset_col, "----------------");
+        row += 1;
+
+        let stats = player.calculate_stats();
+        mvprintw(row as i32, character_offset_col, &format!(" Vitality: {}", stats.vitality));
+        row += 1;
+
+        mvprintw(row as i32, character_offset_col, &format!(" Strength: {}", stats.strength));
+        row += 1;
+
+        mvprintw(row as i32, character_offset_col, &format!(" Defense:  {}", stats.defense));
+        row += 1;
+
+        mvprintw(row as i32, character_offset_col, &format!(" Speed:    {}", stats.speed));
+        row += 1;
+
+        if active {
+            match character_pointer {
+                Type::Head => {
+                    mvaddch((character_offset_row + 1) as i32, character_offset_col, resolve_item_cursor());
+                    Window::draw_item(&player.head_item);
+                },
+                Type::Chest => {
+                    mvaddch((character_offset_row + 2) as i32, character_offset_col, resolve_item_cursor());
+                    Window::draw_item(&player.chest_item);
+
+                },
+                Type::Legs => {
+                    mvaddch((character_offset_row + 3) as i32, character_offset_col, resolve_item_cursor());
+                    Window::draw_item(&player.leg_item);
+
+                },
+                Type::Weapon => {
+                    mvaddch((character_offset_row + 4) as i32, character_offset_col, resolve_item_cursor());
+                    Window::draw_item(&player.weapon);
+                },
+                _ => {},
+            }
+        }
     }
 
     pub fn draw_item(item: &Item) {
@@ -86,7 +126,7 @@ impl Window {
         }
     }
 
-    pub fn draw_loot(backpack: &Backpack, backpack_index: usize) {
+    pub fn draw_loot(backpack: &Backpack, backpack_index: usize, active : bool) {
         let loot_offset_row = 0;
         let loot_offset_col = 50;
         let display_row_count = 5;
@@ -110,8 +150,10 @@ impl Window {
             counter += 1;
         }
 
-        //Mark current items.
-        mvaddch(((backpack_index % display_row_count) + loot_offset_row) as i32, loot_offset_col, resolve_item_cursor());
+        if active {
+            //Mark current items.
+            mvaddch(((backpack_index % display_row_count) + loot_offset_row) as i32, loot_offset_col, resolve_item_cursor());
+        }
 
         //Fill empty spaces.
         while counter < display_row_count {
@@ -119,8 +161,10 @@ impl Window {
             counter += 1;
         }
 
-        //Draw full item
-        Window::draw_item(&backpack.items[backpack_index]);
+        if active {
+            //Draw full item
+            Window::draw_item(&backpack.items[backpack_index]);
+        }
     }
 
     pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Monster>, effect_list: &Vec<WeaponAttack>) {

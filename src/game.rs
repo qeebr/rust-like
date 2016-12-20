@@ -73,6 +73,7 @@ pub fn game() {
         if (game_state == Action::Game && next_game_state == Action::Loot) ||
             (game_state == Action::Game && next_game_state == Action::Inventory) {
             backpack_index = 0;
+            inventory_pointer = InventoryPointer::Backpack;
         }
 
         if next_game_state == Action::Quit {
@@ -86,11 +87,10 @@ pub fn game() {
         if game_state == Action::Loot {
             let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
 
-            Window::draw_loot(&enemy.entity.backpack, backpack_index)
+            Window::draw_loot(&enemy.entity.backpack, backpack_index, true)
         } else if game_state == Action::Inventory {
-
-            Window::draw_loot(&player.backpack, backpack_index);
-            Window::draw_entity(&player, character_pointer);
+            Window::draw_loot(&player.backpack, backpack_index, inventory_pointer == InventoryPointer::Backpack);
+            Window::draw_entity(&player, character_pointer, inventory_pointer == InventoryPointer::Character);
         }
 
         //Add Player backpack to drawing loop so player can equip looted items!
@@ -123,8 +123,8 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
                     }
                 },
                 Input::MoveDown => {
-                    if !player.backpack.empty_slot(*backpack_index+1) {
-                        *backpack_index+=1;
+                    if !player.backpack.empty_slot(*backpack_index + 1) {
+                        *backpack_index += 1;
                     }
                 },
                 Input::Use => {
@@ -136,14 +136,53 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
                         player.backpack.insert_item(*backpack_index, old_item);
                     }
                 },
-                Input::Quit => {return Action::Game},
+
+                Input::MoveLeft => {
+                    *inventory_pointer = InventoryPointer::Character;
+                }
+
+                Input::Quit => { return Action::Game },
                 _ => {},
             };
-
         },
         &mut InventoryPointer::Character => {
-            //GO ON HERE!
-            //btw. remove the damn head/legs items.. there is just plain nothing. xD
+            match input {
+                Input::MoveUp => {
+                    match character_pointer {
+                        &mut Type::Chest => {
+                            *character_pointer = Type::Head;
+                        },
+                        &mut Type::Legs => {
+                            *character_pointer = Type::Chest;
+                        },
+                        &mut Type::Weapon => {
+                            *character_pointer = Type::Legs;
+                        },
+                        _ => {},
+                    }
+                },
+                Input::MoveDown => {
+                    match character_pointer {
+                        &mut Type::Head => {
+                            *character_pointer = Type::Chest;
+                        }
+                        &mut Type::Chest => {
+                            *character_pointer = Type::Legs;
+                        },
+                        &mut Type::Legs => {
+                            *character_pointer = Type::Weapon;
+                        },
+                        _ => {},
+                    }
+                }
+
+                Input::MoveRight => {
+                    *inventory_pointer = InventoryPointer::Backpack;
+                },
+
+                Input::Quit => { return Action::Game },
+                _ => {},
+            }
         },
     }
 
