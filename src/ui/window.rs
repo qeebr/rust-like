@@ -28,37 +28,18 @@ impl Window {
         let character_offset_row = 0;
         let character_offset_col = 10;
 
-        let mut row = character_offset_row;
-        mvprintw(row as i32, character_offset_col, &format!(" Player:   {}", player.name));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, &format!(" Head:     {}", player.head_item.name));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, &format!(" Chest:    {}", player.chest_item.name));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, &format!(" Legs:     {}", player.leg_item.name));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, &format!(" Weapon:   {}", player.weapon.name));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, "----------------");
-        row += 1;
+        mvprintw(character_offset_row, character_offset_col, &format!(" Player:   {}", player.name));
+        mvprintw(character_offset_row + 1, character_offset_col, &format!(" Head:     {}", player.head_item.name));
+        mvprintw(character_offset_row + 2, character_offset_col, &format!(" Chest:    {}", player.chest_item.name));
+        mvprintw(character_offset_row + 3, character_offset_col, &format!(" Legs:     {}", player.leg_item.name));
+        mvprintw(character_offset_row + 4, character_offset_col, &format!(" Weapon:   {}", player.weapon.name));
+        mvprintw(character_offset_row + 5, character_offset_col, "----------------");
 
         let stats = player.calculate_stats();
-        mvprintw(row as i32, character_offset_col, &format!(" Vitality: {}", stats.vitality));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, &format!(" Strength: {}", stats.strength));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, &format!(" Defense:  {}", stats.defense));
-        row += 1;
-
-        mvprintw(row as i32, character_offset_col, &format!(" Speed:    {}", stats.speed));
-        row += 1;
+        mvprintw(character_offset_row + 6, character_offset_col, &format!(" Vitality: {}", stats.vitality));
+        mvprintw(character_offset_row + 7, character_offset_col, &format!(" Strength: {}", stats.strength));
+        mvprintw(character_offset_row + 8, character_offset_col, &format!(" Defense:  {}", stats.defense));
+        mvprintw(character_offset_row + 9, character_offset_col, &format!(" Speed:    {}", stats.speed));
 
         if active {
             match character_pointer {
@@ -132,13 +113,11 @@ impl Window {
         let display_row_count = 5;
 
         let mut items: Vec<&Item> = Vec::new();
-        let mut item_count = 0;
         let start_index = display_row_count * (backpack_index / display_row_count);
 
         //Fill items vector with items to display.
         for index in start_index .. start_index + display_row_count {
             if !backpack.empty_slot(index) {
-                item_count+=1;
                 items.push(&backpack.items[index]);
             }
         }

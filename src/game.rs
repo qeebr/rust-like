@@ -1,7 +1,9 @@
+extern crate rand;
+
+use rand::Rng;
 use super::character::entity::*;
 use super::character::monster::*;
 use super::character::item::*;
-use super::character::backpack::*;
 use super::level::level::*;
 use super::ui::window::*;
 use super::combat::effect::*;
@@ -10,7 +12,7 @@ use super::log::*;
 
 pub fn game() {
     let mut log = Log { messages: Vec::new() };
-    let map = Level::new();
+    let map = generate_level();
     let mut player = Entity::new();
     player.name = "qriz".to_string();
 
@@ -19,7 +21,7 @@ pub fn game() {
 
     Window::init();
 
-    let mut row_index = 0;
+    /*let mut row_index = 0;
     for meta_row in &map.meta {
         let mut col_index = 0;
         for meta_col in meta_row {
@@ -43,7 +45,7 @@ pub fn game() {
         }
 
         row_index += 1;
-    }
+    }*/
 
     Window::draw(&mut log, &map, &player, &enemies, &effect_list);
 
@@ -60,7 +62,7 @@ pub fn game() {
                 handle_game_state(&mut log, &map, &mut player, &mut enemies, &mut effect_list, input)
             },
             Action::Loot => {
-                handle_loop_state(&mut log, &map, &mut player, &mut enemies, &mut backpack_index, input)
+                handle_loot_state(&mut log, &mut player, &mut enemies, &mut backpack_index, input)
             }
             Action::Inventory => {
                 handle_inventory_state(&mut log, &mut player, &mut inventory_pointer, &mut backpack_index, &mut character_pointer, input)
@@ -92,8 +94,6 @@ pub fn game() {
             Window::draw_loot(&player.backpack, backpack_index, inventory_pointer == InventoryPointer::Backpack);
             Window::draw_entity(&player, character_pointer, inventory_pointer == InventoryPointer::Character);
         }
-
-        //Add Player backpack to drawing loop so player can equip looted items!
     }
 
     Window::clear();
@@ -113,6 +113,89 @@ enum Action {
     Quit,
 }
 
+fn generate_level() -> Level {
+    let mut level = Level {level : Vec::new(), meta : Vec::new()};
+
+    let size = 25;
+    let room_count = 5;
+
+    //Create empty map.
+    for row in 0..size  {
+        level.level.push(Vec::new());
+        level.meta.push(Vec::new());
+
+        for col in 0..size {
+            level.level[row].push(Tile::Nothing);
+            level.meta[row].push(Tile::Nothing);
+
+            assert!(level.level[row][col] == Tile::Nothing);
+        }
+    }
+
+    for room in 0..room_count {
+        let mut pos_found = false;
+        let mut row = rand::thread_rng().gen_range(2, size-2);
+        let mut col = rand::thread_rng().gen_range(2, size-2);
+
+        while !pos_found {
+            pos_found = true;
+
+            row = rand::thread_rng().gen_range(2, size-2);
+            col = rand::thread_rng().gen_range(2, size-2);
+
+            for test_row in 0.. 3 {
+                for test_col in 0..3 {
+                    if level.level[row+test_row][col+test_col] != Tile::Nothing {
+                        pos_found = false;
+                    }
+                }
+                for test_col in 1..3 {
+                    if level.level[row+test_row][col-test_col] != Tile::Nothing {
+                        pos_found = false;
+                    }
+                }
+            }
+
+            if !pos_found {
+                continue;
+            }
+
+            for test_row in 1..3 {
+                for test_col in 0..3 {
+                    if level.level[row-test_row][col+test_col] != Tile::Nothing {
+                        pos_found = false;
+                    }
+                }
+                for test_col in 1..3 {
+                    if level.level[row-test_row][col-test_col] != Tile::Nothing {
+                        pos_found = false;
+                    }
+                }
+            }
+        }
+
+        for test_row in 0.. 3 {
+            for test_col in 0..3 {
+                level.level[row+test_row][col+test_col] = Tile::Floor;
+            }
+            for test_col in 1..3 {
+                level.level[row+test_row][col-test_col] = Tile::Floor;
+            }
+        }
+
+        for test_row in 1..3 {
+            for test_col in 0..3 {
+                level.level[row-test_row][col+test_col] = Tile::Floor;
+            }
+            for test_col in 1..3 {
+                level.level[row-test_row][col-test_col] = Tile::Floor;
+            }
+        }
+    }
+
+    level
+}
+
 fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer: &mut InventoryPointer, backpack_index: &mut usize, character_pointer: &mut Type, input: Input) -> Action {
     match inventory_pointer {
         &mut InventoryPointer::Backpack => {
@@ -129,12 +212,15 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
                 },
                 Input::Use => {
                     let new_item = player.backpack.items[*backpack_index].clone();
+                    let name_clone = new_item.name.clone();
                     player.backpack.remove_item(*backpack_index);
                     let old_item = player.equip(new_item);
 
                     if old_item.item_type != Type::Nothing {
                         player.backpack.insert_item(*backpack_index, old_item);
                     }
+
+                    log.add_message(format!("Player {} equipped {}", player.name, name_clone))
                 },
 
                 Input::MoveLeft => {
@@ -189,8 +275,8 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
     Action::Inventory
 }
 
-fn handle_loop_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, input: Input) -> Action {
-    let mut enemy_index = enemies.iter().position(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
+fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, input: Input) -> Action {
+    let enemy_index = enemies.iter().position(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
 
 
     match input {
@@ -211,7 +297,10 @@ fn handle_loop_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
                 log.add_message(format!("Item {} added to Backpack", item.name));
 
                 enemies[enemy_index].entity.backpack.remove_item(*backpack_index);
-                player.backpack.add_item(item);
+                match player.backpack.add_item(item) {
+                    Result::Err(..) => {panic!("Error")},
+                    _ => {},
+                }
             } else {
                 log.add_message("Backpack ist full!".to_string());
             }
@@ -272,47 +361,81 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
+
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger2".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger3".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger4".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger5".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger6".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger7".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger8".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger9".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger10".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
     let item = Item { item_type: Type::Weapon, name: "Dagger11".to_string(), modifications: modifications };
-    enemy.backpack.add_item(item);
+    match enemy.backpack.add_item(item) {
+        Result::Err(..) => {panic!("wait wat");},
+        _ => {},
+    }
 
     Monster::new(MonsterType::Zombie, Difficulty::Easy, enemy)
 }

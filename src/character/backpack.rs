@@ -77,7 +77,7 @@ impl Backpack {
     }
 
     pub fn empty_slot(&self, index: usize) -> bool {
-        if index >= 0 && index < BACKPACK_SIZE {
+        if index < BACKPACK_SIZE { // usize is always >= than zero.
             return self.items[index].item_type == Type::Nothing
         }
 
