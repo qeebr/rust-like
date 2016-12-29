@@ -11,6 +11,7 @@ pub enum Tile {
     Wall,
     PlSpawn,
     MnSpawn { mn_type : u32, difficulty : u32 },
+    Next,
 }
 
 impl Level {

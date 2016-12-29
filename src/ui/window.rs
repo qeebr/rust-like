@@ -290,5 +290,6 @@ fn resolve_tile(tile: &Tile) -> u32 {
         &Tile::Nothing => ' ' as u32,
         &Tile::PlSpawn => '!' as u32,
         &Tile::MnSpawn { .. } => '?' as u32,
+        &Tile::Next => '~' as u32,
     }
 }

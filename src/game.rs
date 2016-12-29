@@ -1,10 +1,8 @@
-extern crate rand;
-
-use rand::Rng;
 use super::character::entity::*;
 use super::character::monster::*;
 use super::character::item::*;
 use super::level::level::*;
+use super::level::map_gen::*;
 use super::ui::window::*;
 use super::combat::effect::*;
 use super::combat::fight::*;
@@ -21,7 +19,7 @@ pub fn game() {
 
     Window::init();
 
-    /*let mut row_index = 0;
+    let mut row_index = 0;
     for meta_row in &map.meta {
         let mut col_index = 0;
         for meta_col in meta_row {
@@ -45,7 +43,7 @@ pub fn game() {
         }
 
         row_index += 1;
-    }*/
+    }
 
     Window::draw(&mut log, &map, &player, &enemies, &effect_list);
 
@@ -111,89 +109,6 @@ enum Action {
     Loot,
     Inventory,
     Quit,
-}
-
-fn generate_level() -> Level {
-    let mut level = Level {level : Vec::new(), meta : Vec::new()};
-
-    let size = 25;
-    let room_count = 5;
-
-    //Create empty map.
-    for row in 0..size  {
-        level.level.push(Vec::new());
-        level.meta.push(Vec::new());
-
-        for col in 0..size {
-            level.level[row].push(Tile::Nothing);
-            level.meta[row].push(Tile::Nothing);
-
-            assert!(level.level[row][col] == Tile::Nothing);
-        }
-    }
-
-    for room in 0..room_count {
-        let mut pos_found = false;
-        let mut row = rand::thread_rng().gen_range(2, size-2);
-        let mut col = rand::thread_rng().gen_range(2, size-2);
-
-        while !pos_found {
-            pos_found = true;
-
-            row = rand::thread_rng().gen_range(2, size-2);
-            col = rand::thread_rng().gen_range(2, size-2);
-
-            for test_row in 0.. 3 {
-                for test_col in 0..3 {
-                    if level.level[row+test_row][col+test_col] != Tile::Nothing {
-                        pos_found = false;
-                    }
-                }
-                for test_col in 1..3 {
-                    if level.level[row+test_row][col-test_col] != Tile::Nothing {
-                        pos_found = false;
-                    }
-                }
-            }
-
-            if !pos_found {
-                continue;
-            }
-
-            for test_row in 1..3 {
-                for test_col in 0..3 {
-                    if level.level[row-test_row][col+test_col] != Tile::Nothing {
-                        pos_found = false;
-                    }
-                }
-                for test_col in 1..3 {
-                    if level.level[row-test_row][col-test_col] != Tile::Nothing {
-                        pos_found = false;
-                    }
-                }
-            }
-        }
-
-        for test_row in 0.. 3 {
-            for test_col in 0..3 {
-                level.level[row+test_row][col+test_col] = Tile::Floor;
-            }
-            for test_col in 1..3 {
-                level.level[row+test_row][col-test_col] = Tile::Floor;
-            }
-        }
-
-        for test_row in 1..3 {
-            for test_col in 0..3 {
-                level.level[row-test_row][col+test_col] = Tile::Floor;
-            }
-            for test_col in 1..3 {
-                level.level[row-test_row][col-test_col] = Tile::Floor;
-            }
-        }
-    }
-
-    level
 }
 
 fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer: &mut InventoryPointer, backpack_index: &mut usize, character_pointer: &mut Type, input: Input) -> Action {
@@ -351,11 +266,10 @@ fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
     Action::Game
 }
 
+#[warn(unused_variables)]//THIS METHOD IS NOT REALLY IMPLEMENTED.
 fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     let mut enemy = Entity::new();
     enemy.name = "Zombie".to_string();
-    enemy.pos_row = 5;
-    enemy.pos_col = 5;
     enemy.base_stats.vitality = 1;
     enemy.current_life = enemy.calculate_max_life();
 
