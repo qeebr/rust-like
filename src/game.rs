@@ -1,3 +1,6 @@
+extern crate rand;
+use rand::Rng;
+
 use super::character::entity::*;
 use super::character::monster::*;
 use super::character::item::*;
@@ -16,8 +19,6 @@ pub fn game() {
 
     let mut enemies: Vec<Monster> = Vec::new();
     let mut effect_list: Vec<WeaponAttack> = Vec::new();
-
-    Window::init();
 
     let mut row_index = 0;
     for meta_row in &map.meta {
@@ -45,12 +46,13 @@ pub fn game() {
         row_index += 1;
     }
 
-    Window::draw(&mut log, &map, &player, &enemies, &effect_list);
-
     let mut game_state = Action::Game;
     let mut backpack_index: usize = 0;
     let mut inventory_pointer = InventoryPointer::Backpack;
     let mut character_pointer = Type::Head;
+
+    Window::init();
+    Window::draw(&mut log, &map, &player, &enemies, &effect_list);
 
     loop {
         let input = Window::get_input();
@@ -266,92 +268,60 @@ fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
     Action::Game
 }
 
-#[warn(unused_variables)]//THIS METHOD IS NOT REALLY IMPLEMENTED.
 fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
-    let mut enemy = Entity::new();
-    enemy.name = "Zombie".to_string();
-    enemy.base_stats.vitality = 1;
-    enemy.current_life = enemy.calculate_max_life();
+    let mut monster = Monster::new(MonsterType::Zombie, Difficulty::Easy, Entity::new());
 
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
+    match mn_type {
+        1 => {
+            monster.entity.name = "Zombie".to_string();
+            monster.monster_type = MonsterType::Zombie;
+        },
+        2 => {
+            monster.entity.name = "Crab".to_string();
+            monster.monster_type = MonsterType::Crab;
+        },
+        3 => {
+            monster.entity.name = "Goblin".to_string();
+            monster.monster_type = MonsterType::Goblin;
+        },
+        _ => panic!("unknown monster_type."),
+    };
+
+    let player_stats = player.calculate_stats();
+
+    match diff {
+        1 => {
+            monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
+            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
+            monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
+            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
+
+            monster.monster_difficulty = Difficulty::Easy;
+        },
+        2 => {
+            monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
+            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
+            monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
+            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
+
+            monster.monster_difficulty = Difficulty::Easy;
+        },
+        3 => {
+            monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
+            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
+            monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
+            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
+
+            monster.monster_difficulty = Difficulty::Easy;
+        },
+        _ => panic!("unknown difficulty."),
     }
 
+    monster.entity.current_life = monster.entity.calculate_max_life();
 
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger2".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
+    //Add loot!
 
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger3".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger4".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger5".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger6".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger7".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger8".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger9".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger10".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    let item = Item { item_type: Type::Weapon, name: "Dagger11".to_string(), modifications: modifications };
-    match enemy.backpack.add_item(item) {
-        Result::Err(..) => {panic!("wait wat");},
-        _ => {},
-    }
-
-    Monster::new(MonsterType::Zombie, Difficulty::Easy, enemy)
+    monster
 }
 
 fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>) {

@@ -1,8 +1,9 @@
 use super::entity::*;
 
 pub enum MonsterType {
-    Dog,
+    Crab,
     Zombie,
+    Goblin,
 }
 
 pub enum Difficulty {

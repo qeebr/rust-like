@@ -149,11 +149,7 @@ impl Window {
     pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Monster>, effect_list: &Vec<WeaponAttack>) {
         clear();
 
-        /* Get the screen bounds. */
-        let mut max_x = 0;
-        let mut max_y = 0;
-        getmaxyx(stdscr(), &mut max_y, &mut max_x);
-
+        //Draw Map.
         let mut row_index = 0;
         for row in &level.level {
             let mut col_index = 0;
@@ -168,14 +164,17 @@ impl Window {
             row_index += 1;
         }
 
+        //Draw Enemies.
         for enemy in enemies {
             mv(enemy.entity.pos_row, enemy.entity.pos_col);
             addch(resolve_enemy(enemy));
         }
 
+        //Draw Player.
         mv(player.pos_row, player.pos_col);
         addch(resolve_player());
 
+        //Draw Effects.
         for effect in effect_list {
             for &(row, col) in &effect.area {
                 if &level.level[row as usize][col as usize] != &Tile::Wall {
@@ -185,6 +184,7 @@ impl Window {
             }
         }
 
+        //Draw latest game message.
         let msg = log.get_message();
         match msg {
             Option::Some(val) => {
@@ -194,6 +194,42 @@ impl Window {
                 mvprintw(LINES() - 1, 0, "                                      ");
             },
         }
+
+        //Draw Player Health and Name.
+        mvaddch(0,0, '[' as u32);
+        let health = ((player.current_life as f32 / player.calculate_max_life() as f32) * 100.0f32) as u32;
+        if health >= 10 {
+            mvaddch(0,1, '#' as u32);
+        }
+        if health >= 20 {
+            mvaddch(0,2, '#' as u32);
+        }
+        if health >= 30 {
+            mvaddch(0,3, '#' as u32);
+        }
+        if health >= 40 {
+            mvaddch(0,4, '#' as u32);
+        }
+        if health >= 50 {
+            mvaddch(0,5, '#' as u32);
+        }
+        if health >= 60 {
+            mvaddch(0,6, '#' as u32);
+        }
+        if health >= 70 {
+            mvaddch(0,7, '#' as u32);
+        }
+        if health >= 80 {
+            mvaddch(0,8, '#' as u32);
+        }
+        if health >= 90 {
+            mvaddch(0,9, '#' as u32);
+        }
+        if health >= 100 {
+            mvaddch(0,10, '#' as u32);
+        }
+        mvaddch(0,11,']' as u32);
+        mvprintw(0, 13, &player.name);
     }
 
     pub fn get_input() -> Input {

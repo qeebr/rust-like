@@ -1,26 +1,15 @@
 extern crate rand;
 use std;
 use rand::Rng;
+
 use super::level::*;
 
-use super::super::character::entity::*;
-use super::super::character::monster::*;
-use super::super::character::item::*;
-use super::super::ui::window::*;
-use super::super::combat::effect::*;
-use super::super::combat::fight::*;
-use super::super::log::*;
-
 struct Room {
-    id : i32,
-
     row : usize,
     col : usize,
 
     width : usize,
     height: usize,
-
-    connected : bool,
 }
 
 impl Room {
@@ -77,9 +66,6 @@ pub fn generate_level() -> Level {
         let room_width = rand::thread_rng().gen_range(2, 7);
 
         let mut room = Room{
-            id : room_id,
-            connected: false,
-
             width : room_width,
             height : room_height,
 
@@ -102,7 +88,6 @@ pub fn generate_level() -> Level {
             if collsion {
                 retries+=1;
             } else {
-                retries = max_retries;
                 position_found = true;
                 break;
             }
@@ -177,7 +162,7 @@ pub fn generate_level() -> Level {
                 }
             }
 
-            let new_room = Room {row: new_row, col: new_col, id:0, height : rooms[index].height, width: rooms[index].width, connected : false};
+            let new_room = Room {row: new_row, col: new_col, height : rooms[index].height, width: rooms[index].width};
             let mut collision = false;
             for second_index in 0..rooms.len() {
                 if index == second_index {
@@ -217,8 +202,8 @@ fn add_meta_information(rooms : &Vec<Room>, level : &mut Level) {
     for index in 1..rooms.len()-1 {
         let spawn_chance = rand::thread_rng().gen_range(1, 11);
 
-        if spawn_chance <= 7 {
-            level.meta[rooms[index].row][rooms[index].col] = Tile::MnSpawn { difficulty: rand::thread_rng().gen_range(1, 4), mn_type: rand::thread_rng().gen_range(1, 10) }
+        if spawn_chance <= 9 {
+            level.meta[rooms[index].row][rooms[index].col] = Tile::MnSpawn { difficulty: rand::thread_rng().gen_range(1, 4), mn_type: rand::thread_rng().gen_range(1, 4) }
         }
     }
 
@@ -401,16 +386,16 @@ fn create_level(rooms : &Vec<Room>, size_rows:usize, size_cols:usize) -> Level {
 
 #[test]
 fn test_intersect() {
-    let a = Room {row: 20, col: 10, id:0, height : 5, width: 10, connected : false};
-    let b = Room {row: 20, col: 10, id:0, height : 5, width: 10, connected : false};
+    let a = Room {row: 20, col: 10, height : 5, width: 10};
+    let b = Room {row: 20, col: 10, height : 5, width: 10};
 
     assert!(a.intersect(&b));
 }
 
 #[test]
 fn test_not_intersect() {
-    let a = Room {row: 20, col: 10, id:0, height : 5, width: 10, connected : false};
-    let b = Room {row: 31, col: 10, id:0, height : 5, width: 10, connected : false};
+    let a = Room {row: 20, col: 10, height : 5, width: 10};
+    let b = Room {row: 31, col: 10, height : 5, width: 10};
 
     assert!(!a.intersect(&b));
 }
