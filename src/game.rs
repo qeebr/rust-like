@@ -14,38 +14,14 @@ use super::log::*;
 
 pub fn game() {
     let mut log = Log { messages: Vec::new() };
-    let map = generate_level();
+    let mut map = generate_level();
     let mut player = Entity::new();
     player.name = "qriz".to_string();
 
     let mut enemies: Vec<Monster> = Vec::new();
     let mut effect_list: Vec<WeaponAttack> = Vec::new();
 
-    let mut row_index = 0;
-    for meta_row in &map.meta {
-        let mut col_index = 0;
-        for meta_col in meta_row {
-            match meta_col {
-                &Tile::PlSpawn => {
-                    player.pos_row = row_index;
-                    player.pos_col = col_index;
-                },
-                &Tile::MnSpawn { mn_type, difficulty } => {
-                    let mut monster = create_monster(&player, mn_type, difficulty);
-
-                    monster.entity.pos_row = row_index;
-                    monster.entity.pos_col = col_index;
-
-                    enemies.push(monster);
-                },
-                _ => (),
-            }
-
-            col_index += 1;
-        }
-
-        row_index += 1;
-    }
+    set_player_and_monsters(&map, &mut player, &mut enemies);
 
     let mut game_state = Action::Game;
     let mut backpack_index: usize = 0;
@@ -67,6 +43,12 @@ pub fn game() {
             }
             Action::Inventory => {
                 handle_inventory_state(&mut log, &mut player, &mut inventory_pointer, &mut backpack_index, &mut character_pointer, input)
+            }
+            Action::NextLevel => {
+                enemies.clear();
+                map = generate_level();
+                set_player_and_monsters(&map, &mut player, &mut enemies);
+                Action::Game
             }
             Action::Quit => {
                 break;
@@ -100,6 +82,34 @@ pub fn game() {
     Window::clear();
 }
 
+fn set_player_and_monsters(map : &Level, player : &mut Entity, enemies : &mut Vec<Monster>) {
+    let mut row_index = 0;
+    for meta_row in &map.meta {
+        let mut col_index = 0;
+        for meta_col in meta_row {
+            match meta_col {
+                &Tile::PlSpawn => {
+                    player.pos_row = row_index;
+                    player.pos_col = col_index;
+                },
+                &Tile::MnSpawn { mn_type, difficulty } => {
+                    let mut monster = create_monster(&player, mn_type, difficulty);
+
+                    monster.entity.pos_row = row_index;
+                    monster.entity.pos_col = col_index;
+
+                    enemies.push(monster);
+                },
+                _ => (),
+            }
+
+            col_index += 1;
+        }
+
+        row_index += 1;
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum InventoryPointer {
     Backpack,
@@ -111,6 +121,7 @@ enum Action {
     Game,
     Loot,
     Inventory,
+    NextLevel,
     Quit,
 }
 
@@ -254,7 +265,10 @@ fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
                     return Action::Loot
                 },
                 _ => {
-                    return Action::Inventory
+                    if map.meta[player.pos_row as usize][player.pos_col as usize] == Tile::Next {
+                        return Action::NextLevel;
+                    }
+                    return Action::Inventory;
                 },
             }
         },
