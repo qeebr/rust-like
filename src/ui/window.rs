@@ -150,13 +150,21 @@ impl Window {
         clear();
 
         //Draw Map.
-        let mut row_index = 0;
+        let mut row_index : usize = 0;
         for row in &level.level {
-            let mut col_index = 0;
+            let mut col_index : usize = 0;
 
             for col in row {
-                mv(row_index, col_index);
-                addch(resolve_tile(col));
+                mv(row_index as i32, col_index as i32);
+
+                match &level.meta[row_index][col_index] {
+                    &Tile::PlSpawn | &Tile::Next => {
+                        addch(resolve_tile(&level.meta[row_index][col_index]));
+                    },
+                    _ => {
+                        addch(resolve_tile(col));
+                    }
+                }
 
                 col_index += 1;
             }
@@ -324,8 +332,8 @@ fn resolve_tile(tile: &Tile) -> u32 {
         &Tile::Floor => '.' as u32,
         &Tile::Wall => '#' as u32,
         &Tile::Nothing => ' ' as u32,
-        &Tile::PlSpawn => '!' as u32,
+        &Tile::PlSpawn => '<' as u32,
         &Tile::MnSpawn { .. } => '?' as u32,
-        &Tile::Next => '~' as u32,
+        &Tile::Next => '>' as u32,
     }
 }
