@@ -27,9 +27,14 @@ impl Fight {
 
         let actual_damage = generator.generate(weapon_damage.0 + attack_bonus, weapon_damage.1 + attack_bonus);
 
-        log.add_message(format!("{} hit {} with {}!", me.name, enemy.name, actual_damage));
+        if actual_damage > 0 {
+            log.add_message(format!("{} hit {} with {}!", me.name, enemy.name, actual_damage));
 
-        enemy.current_life -= actual_damage;
+            enemy.current_life -= actual_damage;
+        } else {
+            log.add_message(format!("{}missed {}", me.name, enemy.name));
+        }
+
     }
 }
 
