@@ -319,7 +319,7 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
             monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
 
-            monster.monster_difficulty = Difficulty::Easy;
+            monster.monster_difficulty = Difficulty::Normal;
         },
         3 => {
             monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
@@ -327,7 +327,7 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
             monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
 
-            monster.monster_difficulty = Difficulty::Easy;
+            monster.monster_difficulty = Difficulty::Hard;
         },
         _ => panic!("unknown difficulty."),
     }
@@ -383,9 +383,9 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
 fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty : &Difficulty) {
     let difficulty_bonus = match monster_difficulty {
-        &Difficulty::Easy => { 1 },
-        &Difficulty::Normal => { 3 },
-        &Difficulty::Hard => { 7 },
+        &Difficulty::Easy => { 2 },
+        &Difficulty::Normal => { 4 },
+        &Difficulty::Hard => { 8 },
     };
     let mut first_value_range = match current_item.item_type {
         Type::Nothing => {
@@ -393,6 +393,7 @@ fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty 
         }
         _ => {
             let mut sum = 0;
+
             for stat_mod in &current_item.modifications {
                 match stat_mod {
                     &StatsMod::Add(value) => {
@@ -453,10 +454,13 @@ fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty 
             _ => {current_item.get_damage()},
         };
 
+        let rnd_min = rand::thread_rng().gen_range(min_max_damage.0, min_max_damage.0 + difficulty_bonus);
+        let rnd_max = rand::thread_rng().gen_range(min_max_damage.1, min_max_damage.1 + difficulty_bonus);
+
         //Damage.
         new_item.modifications.push(StatsMod::Damage {
-            min: rand::thread_rng().gen_range(min_max_damage.0, min_max_damage.0 + difficulty_bonus),
-            max: rand::thread_rng().gen_range(min_max_damage.1, min_max_damage.1 + difficulty_bonus)
+            min: rnd_min,
+            max: rnd_max,
         });
 
         //Speed
