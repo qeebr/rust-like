@@ -336,7 +336,8 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let weapon_drop = rand::thread_rng().gen_range(0, 101);
     if weapon_drop <= 10 {
-        let mut new_item = Item {name : generate_random_weapon_name(), item_type : Type::Weapon, modifications : Vec::new()};
+        let item_name = generate_random_weapon_name(Type::Weapon, &monster.monster_difficulty);
+        let mut new_item = Item {name : item_name, item_type : Type::Weapon, modifications : Vec::new()};
 
         generate_item(&mut new_item, &player.weapon, &monster.monster_difficulty);
 
@@ -347,7 +348,8 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let head_drop = rand::thread_rng().gen_range(0, 101);
     if head_drop <= 10 {
-        let mut new_item = Item {name : generate_random_weapon_name(), item_type : Type::Head, modifications : Vec::new()};
+        let item_name = generate_random_weapon_name(Type::Head, &monster.monster_difficulty);
+        let mut new_item = Item {name : item_name, item_type : Type::Head, modifications : Vec::new()};
 
         generate_item(&mut new_item, &player.head_item, &monster.monster_difficulty);
 
@@ -358,7 +360,8 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let chest_drop = rand::thread_rng().gen_range(0, 101);
     if chest_drop <= 10 {
-        let mut new_item = Item {name : generate_random_weapon_name(), item_type : Type::Chest, modifications : Vec::new()};
+        let item_name = generate_random_weapon_name(Type::Chest, &monster.monster_difficulty);
+        let mut new_item = Item {name : item_name, item_type : Type::Chest, modifications : Vec::new()};
 
         generate_item(&mut new_item, &player.chest_item, &monster.monster_difficulty);
 
@@ -369,7 +372,8 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let legs_drop = rand::thread_rng().gen_range(0, 101);
     if legs_drop <= 10 {
-        let mut new_item = Item {name : generate_random_weapon_name(), item_type : Type::Legs, modifications : Vec::new()};
+        let item_name = generate_random_weapon_name(Type::Legs, &monster.monster_difficulty);
+        let mut new_item = Item {name : item_name, item_type : Type::Legs, modifications : Vec::new()};
 
         generate_item(&mut new_item, &player.leg_item, &monster.monster_difficulty);
 
@@ -454,8 +458,18 @@ fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty 
             _ => {current_item.get_damage()},
         };
 
-        let rnd_min = rand::thread_rng().gen_range(min_max_damage.0, min_max_damage.0 + difficulty_bonus);
-        let rnd_max = rand::thread_rng().gen_range(min_max_damage.1, min_max_damage.1 + difficulty_bonus);
+        let mut rnd_min = rand::thread_rng().gen_range(min_max_damage.0, min_max_damage.0 + difficulty_bonus);
+        let mut rnd_max = rand::thread_rng().gen_range(min_max_damage.1, min_max_damage.1 + difficulty_bonus);
+
+        //Just make sure that min is <= than max.
+        if rnd_min == rnd_max {
+            rnd_max +=1;
+        }
+        if rnd_min > rnd_max {
+            let tmp = rnd_min;
+            rnd_min = rnd_max;
+            rnd_max = tmp;
+        }
 
         //Damage.
         new_item.modifications.push(StatsMod::Damage {
@@ -468,8 +482,29 @@ fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty 
     }
 }
 
-fn generate_random_weapon_name() -> String {
-    "Foobar".to_string()
+fn generate_random_weapon_name(item_type : Type, difficulty : &Difficulty) -> String {
+    let quality = match difficulty {
+        &Difficulty::Easy => "Lesser",
+        &Difficulty::Normal => "Good",
+        &Difficulty::Hard => "Master",
+    }.to_string();
+
+    let part = match item_type {
+        Type::Head => "Helm",
+        Type::Chest => "Armor",
+        Type::Legs => "Trousers",
+        Type::Weapon => "Sword",
+        Type::Nothing => "Blackhole",
+    }.to_string();
+
+    if difficulty == &Difficulty::Hard {
+        let suffixes = vec!["of Dragon", "of Ghizzle", "of Hammer", "of Khazak"];
+        let suffix = suffixes[rand::thread_rng().gen_range(0, suffixes.len())].to_string();
+
+        return format!("{} {} {}", quality, part, suffix);
+    }
+
+    return format!("{} {}", quality, part);
 }
 
 fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>) {

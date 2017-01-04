@@ -6,6 +6,7 @@ pub enum MonsterType {
     Goblin,
 }
 
+#[derive(PartialEq)]
 pub enum Difficulty {
     Easy,
     Normal,
