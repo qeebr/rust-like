@@ -25,40 +25,39 @@ impl Window {
     }
 
     pub fn draw_entity(player : &Entity, character_pointer: Type, active : bool) {
-        let character_offset_row = 0;
-        let character_offset_col = 10;
+        let character_offset_row = 2;
+        let character_offset_col = 0;
 
-        mvprintw(character_offset_row, character_offset_col, &format!(" Player:   {}", player.name));
-        mvprintw(character_offset_row + 1, character_offset_col, &format!(" Head:     {}", player.head_item.name));
-        mvprintw(character_offset_row + 2, character_offset_col, &format!(" Chest:    {}", player.chest_item.name));
-        mvprintw(character_offset_row + 3, character_offset_col, &format!(" Legs:     {}", player.leg_item.name));
-        mvprintw(character_offset_row + 4, character_offset_col, &format!(" Weapon:   {}", player.weapon.name));
-        mvprintw(character_offset_row + 5, character_offset_col, "----------------");
+        mvprintw(character_offset_row + 0, character_offset_col, &format!(" Head:     {}", player.head_item.name));
+        mvprintw(character_offset_row + 1, character_offset_col, &format!(" Chest:    {}", player.chest_item.name));
+        mvprintw(character_offset_row + 2, character_offset_col, &format!(" Legs:     {}", player.leg_item.name));
+        mvprintw(character_offset_row + 3, character_offset_col, &format!(" Weapon:   {}", player.weapon.name));
+        mvprintw(character_offset_row + 4, character_offset_col, "----------------");
 
         let stats = player.calculate_stats();
-        mvprintw(character_offset_row + 6, character_offset_col, &format!(" Vitality: {}", stats.vitality));
-        mvprintw(character_offset_row + 7, character_offset_col, &format!(" Strength: {}", stats.strength));
-        mvprintw(character_offset_row + 8, character_offset_col, &format!(" Defense:  {}", stats.defense));
-        mvprintw(character_offset_row + 9, character_offset_col, &format!(" Speed:    {}", stats.speed));
+        mvprintw(character_offset_row + 5, character_offset_col, &format!(" Vitality: {}", stats.vitality));
+        mvprintw(character_offset_row + 6, character_offset_col, &format!(" Strength: {}", stats.strength));
+        mvprintw(character_offset_row + 7, character_offset_col, &format!(" Defense:  {}", stats.defense));
+        mvprintw(character_offset_row + 8, character_offset_col, &format!(" Speed:    {}", stats.speed));
 
         if active {
             match character_pointer {
                 Type::Head => {
-                    mvaddch((character_offset_row + 1) as i32, character_offset_col, resolve_item_cursor());
+                    mvaddch((character_offset_row + 0) as i32, character_offset_col, resolve_item_cursor());
                     Window::draw_item(&player.head_item);
                 },
                 Type::Chest => {
-                    mvaddch((character_offset_row + 2) as i32, character_offset_col, resolve_item_cursor());
+                    mvaddch((character_offset_row + 1) as i32, character_offset_col, resolve_item_cursor());
                     Window::draw_item(&player.chest_item);
 
                 },
                 Type::Legs => {
-                    mvaddch((character_offset_row + 3) as i32, character_offset_col, resolve_item_cursor());
+                    mvaddch((character_offset_row + 2) as i32, character_offset_col, resolve_item_cursor());
                     Window::draw_item(&player.leg_item);
 
                 },
                 Type::Weapon => {
-                    mvaddch((character_offset_row + 4) as i32, character_offset_col, resolve_item_cursor());
+                    mvaddch((character_offset_row + 3) as i32, character_offset_col, resolve_item_cursor());
                     Window::draw_item(&player.weapon);
                 },
                 _ => {},
@@ -67,8 +66,8 @@ impl Window {
     }
 
     pub fn draw_item(item: &Item) {
-        let item_offset_row = 0;
-        let item_offset_col = 35;
+        let item_offset_row = 1;
+        let item_offset_col = 27;
 
         let mut row = item_offset_row;
         mvprintw(row as i32, item_offset_col, &item.name);
@@ -108,8 +107,8 @@ impl Window {
     }
 
     pub fn draw_loot(backpack: &Backpack, backpack_index: usize, active : bool) {
-        let loot_offset_row = 0;
-        let loot_offset_col = 50;
+        let loot_offset_row = 1;
+        let loot_offset_col = 54;
         let display_row_count = 5;
 
         let mut items: Vec<&Item> = Vec::new();
