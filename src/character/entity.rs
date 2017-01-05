@@ -86,7 +86,7 @@ impl Entity {
                 assert_item_is_weapon(&new_item);
                 change_item(&mut self.weapon, new_item)
             },
-            &Type::Nothing => {
+            &Type::Nothing | &Type::Potion => {
                 new_item
             }
         }

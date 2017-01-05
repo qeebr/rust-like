@@ -140,16 +140,31 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
                     }
                 },
                 Input::Use => {
-                    let new_item = player.backpack.items[*backpack_index].clone();
-                    let name_clone = new_item.name.clone();
-                    player.backpack.remove_item(*backpack_index);
-                    let old_item = player.equip(new_item);
+                    let new_item : Item = player.backpack.items[*backpack_index].clone();
 
-                    if old_item.item_type != Type::Nothing {
-                        player.backpack.insert_item(*backpack_index, old_item);
+                    if new_item.item_type == Type::Potion {
+                        let max_life = player.calculate_max_life();
+                        let heal_percentage = new_item.get_heal_percentage();
+                        let actual_heal = max_life / heal_percentage;
+
+                        player.current_life = player.current_life + actual_heal;
+                        if player.current_life > max_life {
+                            player.current_life = max_life;
+                        }
+
+                        player.backpack.remove_item(*backpack_index);
+                        log.add_message(format!("Player {} have been healed.", player.name));
+                    } else {
+                        let name_clone = new_item.name.clone();
+                        player.backpack.remove_item(*backpack_index);
+                        let old_item = player.equip(new_item);
+
+                        if old_item.item_type != Type::Nothing {
+                            player.backpack.insert_item(*backpack_index, old_item);
+                        }
+
+                        log.add_message(format!("Player {} equipped {}", player.name, name_clone));
                     }
-
-                    log.add_message(format!("Player {} equipped {}", player.name, name_clone))
                 },
 
                 Input::MoveLeft => {
@@ -382,6 +397,22 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
         }
     }
 
+    let potion_drop = rand::thread_rng().gen_range(0, 101);
+    if potion_drop <= 5 {
+        let healing_percentage = match monster.monster_difficulty {
+            Difficulty::Easy => 5,
+            Difficulty::Normal => 10,
+            Difficulty::Hard => 25,
+        };
+        let mut potion = Item {name : "Healing Potion".to_string(), item_type : Type::Potion, modifications : Vec::new()};
+
+        potion.modifications.push(StatsMod::Heal(healing_percentage));
+
+        match monster.entity.backpack.add_item(potion) {
+            _ => {/*I don't care.*/}
+        }
+    }
+
     monster
 }
 
@@ -494,7 +525,7 @@ fn generate_random_weapon_name(item_type : Type, difficulty : &Difficulty) -> St
         Type::Chest => "Armor",
         Type::Legs => "Trousers",
         Type::Weapon => "Sword",
-        Type::Nothing => "Blackhole",
+        Type::Nothing | Type::Potion => "Blackhole",
     }.to_string();
 
     if difficulty == &Difficulty::Hard {

@@ -16,7 +16,18 @@ impl Item {
             };
         }
 
-        panic!("Method Item::get_damage should only be called on weapons!");
+        panic!("Method Item::get_damage should only be called on weapons!")
+    }
+
+    pub fn get_heal_percentage(&self) -> i32 {
+        for modification in &self.modifications {
+            match modification {
+                &StatsMod::Heal(val) => return val,
+                _ => (),
+            };
+        }
+
+        panic!("Method Item::get_heal_percentage should only be called on healing-potions!")
     }
 }
 
@@ -38,6 +49,7 @@ pub enum Type {
     Chest,
     Legs,
     Weapon,
+    Potion,
     Nothing,
 }
 
@@ -49,6 +61,7 @@ pub enum StatsMod {
         max: i32
     },
     AttackSpeed(i32),
+    Heal(i32),
 }
 
 pub fn get_fist() -> Item {

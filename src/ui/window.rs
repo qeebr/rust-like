@@ -101,6 +101,9 @@ impl Window {
                         }
                     }
                 }
+                &StatsMod::Heal(val) => {
+                    mvprintw(row as i32, item_offset_col, &format!("Heals {}%", val));
+                }
             }
             row += 1;
         }
@@ -299,6 +302,9 @@ fn resolve_type(item_type : Type) -> &'static str {
         },
         Type::Weapon => {
             "Weapon"
+        },
+        Type::Potion => {
+            "Potion"
         },
         Type::Nothing => {
             "Nothing"
