@@ -262,6 +262,7 @@ pub enum Input {
 
     Quit,
     Use,
+    Drop,
 
     AttackUp,
     AttackDown,
@@ -284,6 +285,7 @@ fn resolve_input(input: i32) -> Input {
 
         113 => Input::Quit, //113 is Q.
         101 => Input::Use, //101 is E.
+        114 => Input::Drop, //114 is R.
 
         _ => Input::Nothing,
     }

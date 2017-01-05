@@ -166,6 +166,14 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
                         log.add_message(format!("Player {} equipped {}", player.name, name_clone));
                     }
                 },
+                Input::Drop => {
+                    let new_item : Item = player.backpack.items[*backpack_index].clone();
+
+                    if new_item.item_type != Type::Nothing {
+                        player.backpack.remove_item(*backpack_index);
+                        log.add_message(format!("Player {} dropped {}.", player.name, new_item.name));
+                    }
+                }
 
                 Input::MoveLeft => {
                     *inventory_pointer = InventoryPointer::Character;
@@ -248,11 +256,9 @@ fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monst
             } else {
                 log.add_message("Backpack ist full!".to_string());
             }
-        }
+        },
 
-        Input::Quit => {
-            return Action::Game;
-        }
+        Input::Quit => { return Action::Game; },
         _ => {},
     }
 
@@ -290,7 +296,7 @@ fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
 
         Input::Quit => { return Action::Quit },
 
-        Input::Nothing => {},
+        Input::Nothing | Input::Drop => {},
     }
 
     handle_ki(log, map, player, enemies, effect_list);
