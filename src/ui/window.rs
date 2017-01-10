@@ -109,8 +109,8 @@ impl Window {
         }
     }
 
-    pub fn draw_loot(backpack: &Backpack, backpack_index: usize, active : bool) {
-        let loot_offset_row = 1;
+    pub fn draw_loot(backpack: &Backpack, backpack_index: usize, active : bool, name : &String) {
+        let mut loot_offset_row = 1;
         let loot_offset_col = 54;
         let display_row_count = 5;
 
@@ -122,6 +122,12 @@ impl Window {
             if !backpack.empty_slot(index) {
                 items.push(&backpack.items[index]);
             }
+        }
+
+        //Display name
+        if name.len() > 0 {
+            mvprintw(loot_offset_row as i32, loot_offset_col, &name);
+            loot_offset_row += 1;
         }
 
         //Display items.

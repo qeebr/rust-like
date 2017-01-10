@@ -12,6 +12,34 @@ use super::combat::effect::*;
 use super::combat::fight::*;
 use super::log::*;
 
+/*
+Was kann ich verbessern:
+
+    Generierung
+    Mehr Monster spawnen.
+    Drop hat atm. nur positive oder neutrale auswirkung aber keine negativen. Lesser -> [Viel Negativ; Neutral+1] Good -> [Negativ; Neutral + 2], Master -> [Neutral: Positiv]
+    (1) Seed der Maps fest machen,
+    Alle 10 oder 20 Level/Monster ein Boss-Monster einfügen, das richtig BÄM macht -> Krasseren Loot droppt, -> den Zusatz aus Master rausnehmen und nur für diese Klasse von Items verwenden.
+    Die Stats der Items ebenfalls in KLassen einteilen, das Helme immer weniger haben wie Chests und Chests am meisten und Legs am wenigsten oder so.
+    Den Schwierigkeitsgrad kann leicht erhöht werden, für einfach mehr für mittel, schwierig ist schon gut so. Das Generieren von Strength+Defense muss nochmal überarbeitet werden,
+
+    UI
+    (1) Anzeige wievieltes Levels man atm. ist.
+    Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
+    Atm. nur ein Monster-Symbol.
+    Zucker anzeigen, ob Item besser ist.
+
+    Game
+    InventoryState nicht zurücksetzen.
+    Ausversehen, das Spiel verlassen -> pseudo Menü-State einführen, bei Q wieder zuruck und bei E beenden.
+    Spezial-Attacken einfügen.
+
+    Reihenfolgen:
+    Zuerst die Monster-Dichte nach oben drehen
+    Generierung von Strenght+Defense
+    Rausnehmen des Zusatzes.
+*/
+
 pub fn game() {
     let mut log = Log { messages: Vec::new() };
     let mut map = generate_level();
@@ -72,9 +100,9 @@ pub fn game() {
         if game_state == Action::Loot {
             let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
 
-            Window::draw_loot(&enemy.entity.backpack, backpack_index, true)
+            Window::draw_loot(&enemy.entity.backpack, backpack_index, true, &enemy.entity.name)
         } else if game_state == Action::Inventory {
-            Window::draw_loot(&player.backpack, backpack_index, inventory_pointer == InventoryPointer::Backpack);
+            Window::draw_loot(&player.backpack, backpack_index, inventory_pointer == InventoryPointer::Backpack, &"".to_string());
             Window::draw_entity(&player, character_pointer, inventory_pointer == InventoryPointer::Character);
         }
     }
@@ -333,6 +361,7 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
 
             monster.monster_difficulty = Difficulty::Easy;
+            monster.entity.name = "(Easy) ".to_string() + &monster.entity.name;
         },
         2 => {
             monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
@@ -341,6 +370,7 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
 
             monster.monster_difficulty = Difficulty::Normal;
+            monster.entity.name = "(Normal) ".to_string() + &monster.entity.name;
         },
         3 => {
             monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
@@ -349,6 +379,7 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
 
             monster.monster_difficulty = Difficulty::Hard;
+            monster.entity.name = "(Hard) ".to_string() + &monster.entity.name;
         },
         _ => panic!("unknown difficulty."),
     }
