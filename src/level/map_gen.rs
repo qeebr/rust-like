@@ -203,11 +203,127 @@ fn add_meta_information(rooms : &Vec<Room>, level : &mut Level) {
         let spawn_chance = rand::thread_rng().gen_range(1, 11);
 
         if spawn_chance <= 9 {
-            level.meta[rooms[index].row][rooms[index].col] = Tile::MnSpawn { difficulty: rand::thread_rng().gen_range(1, 4), mn_type: rand::thread_rng().gen_range(1, 4) }
+            add_monster(&rooms[index], level);
         }
     }
 
     level.meta[rooms[rooms.len()-1].row][rooms[rooms.len()-1].col] = Tile::Next;
+}
+
+fn add_monster(room: &Room, level: &mut Level) {
+    //1 Easy-Many
+    //2 Normal-Few Easy-Few
+    //3 Hard-One, Normal-Few, Easy-Few
+
+    match rand::thread_rng().gen_range(1, 4) {
+        1 => {
+            let monster_type = rand::thread_rng().gen_range(1, 4);
+
+            let row = room.row;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
+            }
+
+            let row = room.row+1;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
+            }
+
+            let row = room.row-1;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
+            }
+
+            let row = room.row;
+            let col = room.col+1;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
+            }
+
+            let row = room.row;
+            let col = room.col-1;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
+            }
+        },
+        2 => {
+            let easy_monster_type = rand::thread_rng().gen_range(1, 4);
+            let normal_monster_type = rand::thread_rng().gen_range(1, 4);
+
+            let row = room.row;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
+            }
+
+            let row = room.row+1;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
+            }
+
+            let row = room.row-1;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
+            }
+
+            let row = room.row;
+            let col = room.col+1;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
+            }
+
+            let row = room.row;
+            let col = room.col-1;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
+            }
+        },
+        3 => {
+            let easy_monster_type = rand::thread_rng().gen_range(1, 4);
+            let normal_monster_type = rand::thread_rng().gen_range(1, 4);
+            let hard_monster_type = rand::thread_rng().gen_range(1, 4);
+
+            let row = room.row;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 3, mn_type: hard_monster_type };
+            }
+
+            let row = room.row+1;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
+            }
+
+            let row = room.row-1;
+            let col = room.col;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
+            }
+
+            let row = room.row;
+            let col = room.col+1;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
+            }
+
+            let row = room.row;
+            let col = room.col-1;
+            if inside_level(row, col, level) {
+                level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
+            }
+        },
+        _ => {},
+    }
+}
+
+fn inside_level(row: usize, col : usize, level : &Level) -> bool {
+    level.level[row][col] == Tile::Floor
 }
 
 fn connect_rooms(rooms : &mut Vec<Room>, level : &mut Level) {
