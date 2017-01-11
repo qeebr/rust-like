@@ -465,11 +465,6 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     monster
 }
 
-fn generate_monster_weapon(min: i32, max: i32) -> Item {
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: min, max: max }, StatsMod::AttackSpeed(1));
-    Item { item_type: Type::Weapon, name: "Gnargler".to_string(), modifications: modifications }
-}
-
 fn generate_item(new_item: &mut Item, current_item: &Item, monster_difficulty: &Difficulty) {
     let difficulty_bonus = match monster_difficulty {
         &Difficulty::Easy => { 2 },

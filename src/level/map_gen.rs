@@ -1,19 +1,20 @@
 extern crate rand;
+
 use std;
 use rand::Rng;
 
 use super::level::*;
 
 struct Room {
-    row : usize,
-    col : usize,
+    row: usize,
+    col: usize,
 
-    width : usize,
+    width: usize,
     height: usize,
 }
 
 impl Room {
-    fn intersect(&self, other : &Room)-> bool {
+    fn intersect(&self, other: &Room) -> bool {
         let x_min = self.col - self.width;
         let x_max = self.col + self.width;
 
@@ -36,12 +37,12 @@ impl Room {
         let diff_row = self.row as i32 - row as i32;
         let diff_col = self.col as i32 - col as i32;
 
-        let q_sum = diff_row*diff_row + diff_col*diff_col;
+        let q_sum = diff_row * diff_row + diff_col * diff_col;
 
         (q_sum as f32).sqrt().abs() as usize
     }
 
-    fn room_distance(&self, other_room : &Room) -> usize {
+    fn room_distance(&self, other_room: &Room) -> usize {
         self.distance(other_room.row, other_room.col)
     }
 }
@@ -58,19 +59,22 @@ pub fn generate_level() -> Level {
     let max_room_count = 7;
 
     let room_count = rnd(min_room_count, max_room_count);
-    let mut rooms : Vec<Room> = Vec::new();
+    let mut rooms: Vec<Room> = Vec::new();
 
     //Distribute rooms.
-    for room_id in 0..room_count {
+    let mut room_counter = 0;
+    while room_counter < room_count {
+        room_counter += 1;
+
         let room_height = rand::thread_rng().gen_range(2, 7);
         let room_width = rand::thread_rng().gen_range(2, 7);
 
-        let mut room = Room{
-            width : room_width,
-            height : room_height,
+        let mut room = Room {
+            width: room_width,
+            height: room_height,
 
-            row: rand::thread_rng().gen_range(room_height, size_rows-(room_height)),
-            col: rand::thread_rng().gen_range(room_width, size_cols-(room_width))
+            row: rand::thread_rng().gen_range(room_height, size_rows - (room_height)),
+            col: rand::thread_rng().gen_range(room_width, size_cols - (room_width))
         };
 
         let mut retries = 0;
@@ -86,14 +90,14 @@ pub fn generate_level() -> Level {
             }
 
             if collsion {
-                retries+=1;
+                retries += 1;
             } else {
                 position_found = true;
                 break;
             }
 
-            room.row = rand::thread_rng().gen_range(room_height, size_rows-(room_height));
-            room.col = rand::thread_rng().gen_range(room_width, size_cols-(room_width));
+            room.row = rand::thread_rng().gen_range(room_height, size_rows - (room_height));
+            room.col = rand::thread_rng().gen_range(room_width, size_cols - (room_width));
         }
 
         if position_found {
@@ -107,14 +111,14 @@ pub fn generate_level() -> Level {
 
     let mut current_room = 0 as usize;
     for room in &rooms {
-        let current_distance = room.distance(size_rows/2, size_cols/2);
+        let current_distance = room.distance(size_rows / 2, size_cols / 2);
 
-        if current_distance < min_distance{
+        if current_distance < min_distance {
             middle_room = current_room;
             min_distance = current_distance;
         }
 
-        current_room +=1;
+        current_room += 1;
     }
 
     //Move every other room to the middle room.
@@ -138,31 +142,31 @@ pub fn generate_level() -> Level {
 
             if row_diff >= 0 && col_diff >= 0 {
                 if row_diff > col_diff {
-                    new_row +=1;
+                    new_row += 1;
                 } else {
-                    new_col +=1;
+                    new_col += 1;
                 }
             } else if row_diff > 0 && col_diff < 0 {
                 if row_diff > -1 * col_diff {
-                    new_row +=1;
+                    new_row += 1;
                 } else {
-                    new_col -=1;
+                    new_col -= 1;
                 }
             } else if row_diff <= 0 && col_diff <= 0 {
                 if row_diff < col_diff {
-                    new_row -=1;
+                    new_row -= 1;
                 } else {
-                    new_col -=1;
+                    new_col -= 1;
                 }
             } else if row_diff < 0 && col_diff > 0 {
                 if -1 * row_diff > col_diff {
-                    new_row -=1;
+                    new_row -= 1;
                 } else {
-                    new_col +=1;
+                    new_col += 1;
                 }
             }
 
-            let new_room = Room {row: new_row, col: new_col, height : rooms[index].height, width: rooms[index].width};
+            let new_room = Room { row: new_row, col: new_col, height: rooms[index].height, width: rooms[index].width };
             let mut collision = false;
             for second_index in 0..rooms.len() {
                 if index == second_index {
@@ -195,11 +199,11 @@ pub fn generate_level() -> Level {
     level
 }
 
-fn add_meta_information(rooms : &Vec<Room>, level : &mut Level) {
+fn add_meta_information(rooms: &Vec<Room>, level: &mut Level) {
     //First Room is the Start.
     level.meta[rooms[0].row][rooms[0].col] = Tile::PlSpawn;
 
-    for index in 1..rooms.len()-1 {
+    for index in 1..rooms.len() - 1 {
         let spawn_chance = rand::thread_rng().gen_range(1, 11);
 
         if spawn_chance <= 9 {
@@ -207,7 +211,7 @@ fn add_meta_information(rooms : &Vec<Room>, level : &mut Level) {
         }
     }
 
-    level.meta[rooms[rooms.len()-1].row][rooms[rooms.len()-1].col] = Tile::Next;
+    level.meta[rooms[rooms.len() - 1].row][rooms[rooms.len() - 1].col] = Tile::Next;
 }
 
 fn add_monster(room: &Room, level: &mut Level) {
@@ -225,26 +229,26 @@ fn add_monster(room: &Room, level: &mut Level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
             }
 
-            let row = room.row+1;
+            let row = room.row + 1;
             let col = room.col;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
             }
 
-            let row = room.row-1;
+            let row = room.row - 1;
             let col = room.col;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
             }
 
             let row = room.row;
-            let col = room.col+1;
+            let col = room.col + 1;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
             }
 
             let row = room.row;
-            let col = room.col-1;
+            let col = room.col - 1;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: monster_type };
             }
@@ -259,26 +263,26 @@ fn add_monster(room: &Room, level: &mut Level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
             }
 
-            let row = room.row+1;
+            let row = room.row + 1;
             let col = room.col;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
             }
 
-            let row = room.row-1;
+            let row = room.row - 1;
             let col = room.col;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
             }
 
             let row = room.row;
-            let col = room.col+1;
+            let col = room.col + 1;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
             }
 
             let row = room.row;
-            let col = room.col-1;
+            let col = room.col - 1;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
             }
@@ -294,26 +298,26 @@ fn add_monster(room: &Room, level: &mut Level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 3, mn_type: hard_monster_type };
             }
 
-            let row = room.row+1;
+            let row = room.row + 1;
             let col = room.col;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
             }
 
-            let row = room.row-1;
+            let row = room.row - 1;
             let col = room.col;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 2, mn_type: normal_monster_type };
             }
 
             let row = room.row;
-            let col = room.col+1;
+            let col = room.col + 1;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
             }
 
             let row = room.row;
-            let col = room.col-1;
+            let col = room.col - 1;
             if inside_level(row, col, level) {
                 level.meta[row][col] = Tile::MnSpawn { difficulty: 1, mn_type: easy_monster_type };
             }
@@ -322,16 +326,15 @@ fn add_monster(room: &Room, level: &mut Level) {
     }
 }
 
-fn inside_level(row: usize, col : usize, level : &Level) -> bool {
+fn inside_level(row: usize, col: usize, level: &Level) -> bool {
     level.level[row][col] == Tile::Floor
 }
 
-fn connect_rooms(rooms : &mut Vec<Room>, level : &mut Level) {
-    for current_room_index in 0 .. rooms.len() {
-
+fn connect_rooms(rooms: &mut Vec<Room>, level: &mut Level) {
+    for current_room_index in 0..rooms.len() {
         let mut first_smallest_distance = std::usize::MAX;
         let mut min_distance = std::usize::MAX;
-        let mut distanced_rooms : Vec<usize> = Vec::new();
+        let mut distanced_rooms: Vec<usize> = Vec::new();
 
         for other_room_index in 0..rooms.len() {
             if current_room_index == other_room_index {
@@ -358,48 +361,46 @@ fn connect_rooms(rooms : &mut Vec<Room>, level : &mut Level) {
 
     rooms.sort_by(|a, b| a.col.cmp(&b.col));
 
-    for current_room_index in 1 .. rooms.len() {
-        connect(level, &rooms[current_room_index-1], &rooms[current_room_index])
+    for current_room_index in 1..rooms.len() {
+        connect(level, &rooms[current_room_index - 1], &rooms[current_room_index])
     }
 
     assure_walls_everywhere(level);
 }
 
-fn assure_walls_everywhere(level : &mut Level) {
-    for row in 1..level.level.len()-1 {
-        for col in 1..level.level[row].len()-1 {
-
+fn assure_walls_everywhere(level: &mut Level) {
+    for row in 1..level.level.len() - 1 {
+        for col in 1..level.level[row].len() - 1 {
             if level.level[row][col] == Tile::Floor {
-
-                if level.level[row-1][col] == Tile::Nothing {
-                    level.level[row-1][col] = Tile::Wall;
+                if level.level[row - 1][col] == Tile::Nothing {
+                    level.level[row - 1][col] = Tile::Wall;
                 }
 
-                if level.level[row][col-1] == Tile::Nothing {
-                    level.level[row][col-1] = Tile::Wall;
+                if level.level[row][col - 1] == Tile::Nothing {
+                    level.level[row][col - 1] = Tile::Wall;
                 }
 
-                if level.level[row-1][col-1] == Tile::Nothing {
-                    level.level[row-1][col-1] = Tile::Wall;
+                if level.level[row - 1][col - 1] == Tile::Nothing {
+                    level.level[row - 1][col - 1] = Tile::Wall;
                 }
 
-                if level.level[row+1][col] == Tile::Nothing {
-                    level.level[row+1][col] = Tile::Wall;
+                if level.level[row + 1][col] == Tile::Nothing {
+                    level.level[row + 1][col] = Tile::Wall;
                 }
 
-                if level.level[row][col+1] == Tile::Nothing {
-                    level.level[row][col+1] = Tile::Wall;
+                if level.level[row][col + 1] == Tile::Nothing {
+                    level.level[row][col + 1] = Tile::Wall;
                 }
 
-                if level.level[row+1][col+1] == Tile::Nothing {
-                    level.level[row+1][col+1] = Tile::Wall;
+                if level.level[row + 1][col + 1] == Tile::Nothing {
+                    level.level[row + 1][col + 1] = Tile::Wall;
                 }
             }
         }
     }
 }
 
-fn connect (level : &mut Level, room_a : &Room, room_b : &Room) {
+fn connect(level: &mut Level, room_a: &Room, room_b: &Room) {
     let mut current_row = room_a.row;
     let mut current_col = room_a.col;
 
@@ -409,27 +410,27 @@ fn connect (level : &mut Level, room_a : &Room, room_b : &Room) {
 
         if row_diff >= 0 && col_diff >= 0 {
             if row_diff > col_diff {
-                current_row +=1;
+                current_row += 1;
             } else {
-                current_col +=1;
+                current_col += 1;
             }
         } else if row_diff > 0 && col_diff < 0 {
             if row_diff > -1 * col_diff {
-                current_row +=1;
+                current_row += 1;
             } else {
-                current_col -=1;
+                current_col -= 1;
             }
         } else if row_diff <= 0 && col_diff <= 0 {
             if row_diff < col_diff {
-                current_row -=1;
+                current_row -= 1;
             } else {
-                current_col -=1;
+                current_col -= 1;
             }
         } else if row_diff < 0 && col_diff > 0 {
             if -1 * row_diff > col_diff {
-                current_row -=1;
+                current_row -= 1;
             } else {
-                current_col +=1;
+                current_col += 1;
             }
         }
 
@@ -441,10 +442,10 @@ fn connect (level : &mut Level, room_a : &Room, room_b : &Room) {
     }
 }
 
-fn create_level(rooms : &Vec<Room>, size_rows:usize, size_cols:usize) -> Level {
-    let mut level = Level {level : Vec::new(), meta : Vec::new()};
+fn create_level(rooms: &Vec<Room>, size_rows: usize, size_cols: usize) -> Level {
+    let mut level = Level { level: Vec::new(), meta: Vec::new() };
     //Create empty map.
-    for row in 0..size_rows  {
+    for row in 0..size_rows {
         level.level.push(Vec::new());
         level.meta.push(Vec::new());
 
@@ -457,36 +458,36 @@ fn create_level(rooms : &Vec<Room>, size_rows:usize, size_cols:usize) -> Level {
     }
 
     for room in rooms {
-        for test_row in 0.. (room.height)+1 {
-            let row_calc = room.row+test_row;
+        for test_row in 0..(room.height) + 1 {
+            let row_calc = room.row + test_row;
 
-            for test_col in 0..(room.width)+1 {
-                let col_calc = room.col+test_col;
-
-                level.level[row_calc][col_calc] = Tile::Floor;
-                level.level[room.row + room.height][col_calc] = Tile::Wall;
-            }
-            for test_col in 1..(room.width)+1 {
-                let col_calc = room.col-test_col;
+            for test_col in 0..(room.width) + 1 {
+                let col_calc = room.col + test_col;
 
                 level.level[row_calc][col_calc] = Tile::Floor;
                 level.level[room.row + room.height][col_calc] = Tile::Wall;
             }
+            for test_col in 1..(room.width) + 1 {
+                let col_calc = room.col - test_col;
 
-            level.level[room.row+test_row][room.col + room.width] = Tile::Wall;
-            level.level[room.row+test_row][room.col - room.width] = Tile::Wall;
+                level.level[row_calc][col_calc] = Tile::Floor;
+                level.level[room.row + room.height][col_calc] = Tile::Wall;
+            }
+
+            level.level[room.row + test_row][room.col + room.width] = Tile::Wall;
+            level.level[room.row + test_row][room.col - room.width] = Tile::Wall;
         }
 
-        for test_row in 1..(room.height)+1 {
-            let row_calc = room.row-test_row;
-            for test_col in 0..(room.width)+1 {
-                let col_calc = room.col+test_col;
+        for test_row in 1..(room.height) + 1 {
+            let row_calc = room.row - test_row;
+            for test_col in 0..(room.width) + 1 {
+                let col_calc = room.col + test_col;
 
                 level.level[row_calc][col_calc] = Tile::Floor;
                 level.level[room.row - room.height][col_calc] = Tile::Wall;
             }
-            for test_col in 1..(room.width)+1 {
-                let col_calc = room.col-test_col;
+            for test_col in 1..(room.width) + 1 {
+                let col_calc = room.col - test_col;
 
                 level.level[row_calc][col_calc] = Tile::Floor;
                 level.level[room.row - room.height][col_calc] = Tile::Wall;
@@ -502,16 +503,16 @@ fn create_level(rooms : &Vec<Room>, size_rows:usize, size_cols:usize) -> Level {
 
 #[test]
 fn test_intersect() {
-    let a = Room {row: 20, col: 10, height : 5, width: 10};
-    let b = Room {row: 20, col: 10, height : 5, width: 10};
+    let a = Room { row: 20, col: 10, height: 5, width: 10 };
+    let b = Room { row: 20, col: 10, height: 5, width: 10 };
 
     assert!(a.intersect(&b));
 }
 
 #[test]
 fn test_not_intersect() {
-    let a = Room {row: 20, col: 10, height : 5, width: 10};
-    let b = Room {row: 31, col: 10, height : 5, width: 10};
+    let a = Room { row: 20, col: 10, height: 5, width: 10 };
+    let b = Room { row: 31, col: 10, height: 5, width: 10 };
 
     assert!(!a.intersect(&b));
 }
