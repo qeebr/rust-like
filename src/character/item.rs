@@ -9,6 +9,10 @@ pub struct Item {
 
 impl Item {
     pub fn get_damage(&self) -> (i32, i32) {
+        if self.item_type == Type::Nothing {
+            return get_fist().get_damage();
+        }
+
         for modification in &self.modifications {
             match modification {
                 &StatsMod::Damage { min, max } => return (min, max),

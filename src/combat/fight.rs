@@ -3,7 +3,6 @@ extern crate rand;
 use rand::Rng;
 
 use super::super::character::entity::*;
-use super::super::character::item::*;
 use super::super::log::*;
 
 pub struct Fight;
@@ -17,11 +16,7 @@ impl Fight {
         let my_dep_stats = me.calculate_stats();
         let enemy_dep_stats = enemy.calculate_stats();
 
-        let mut weapon = me.weapon.clone();
-        if weapon.item_type == Type::Nothing {
-            weapon = get_fists();
-        }
-
+        let weapon = me.weapon.clone();
         let weapon_damage = weapon.get_damage();
         let attack_bonus = my_dep_stats.strength - enemy_dep_stats.strength;
 
@@ -41,11 +36,6 @@ impl Fight {
         }
 
     }
-}
-
-fn get_fists() -> Item {
-    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: 1, max: 5 }, StatsMod::AttackSpeed(1));
-    Item { item_type: Type::Weapon, name: "Fists".to_string(), modifications: modifications }
 }
 
 pub struct RndGenerator;

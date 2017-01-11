@@ -1,4 +1,5 @@
 extern crate rand;
+
 use rand::Rng;
 
 use super::character::entity::*;
@@ -33,11 +34,11 @@ Was kann ich verbessern:
     InventoryState nicht zurücksetzen.
     Ausversehen, das Spiel verlassen -> pseudo Menü-State einführen, bei Q wieder zuruck und bei E beenden.
     Spezial-Attacken einfügen.
+    Looten von mehreren toten Enemies anzeigen und ermöglichen
+    Monster-Generierung balancieren.
 
     Reihenfolgen:
-    Zuerst die Monster-Dichte nach oben drehen
-    Generierung von Strenght+Defense
-    Rausnehmen des Zusatzes.
+
 */
 
 pub fn game() {
@@ -110,7 +111,7 @@ pub fn game() {
     Window::clear();
 }
 
-fn set_player_and_monsters(map : &Level, player : &mut Entity, enemies : &mut Vec<Monster>) {
+fn set_player_and_monsters(map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>) {
     let mut row_index = 0;
     for meta_row in &map.meta {
         let mut col_index = 0;
@@ -168,7 +169,7 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
                     }
                 },
                 Input::Use => {
-                    let new_item : Item = player.backpack.items[*backpack_index].clone();
+                    let new_item: Item = player.backpack.items[*backpack_index].clone();
 
                     if new_item.item_type == Type::Potion {
                         let max_life = player.calculate_max_life();
@@ -195,7 +196,7 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
                     }
                 },
                 Input::Drop => {
-                    let new_item : Item = player.backpack.items[*backpack_index].clone();
+                    let new_item: Item = player.backpack.items[*backpack_index].clone();
 
                     if new_item.item_type != Type::Nothing {
                         player.backpack.remove_item(*backpack_index);
@@ -278,7 +279,7 @@ fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monst
 
                 enemies[enemy_index].entity.backpack.remove_item(*backpack_index);
                 match player.backpack.add_item(item) {
-                    Result::Err(..) => {panic!("Error")},
+                    Result::Err(..) => { panic!("Error") },
                     _ => {},
                 }
             } else {
@@ -356,27 +357,27 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     match diff {
         1 => {
             monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
-            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
-            monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
-            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
+            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.strength/10, player_stats.strength/8 + 1);
+            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.defense/10, player_stats.defense/8 + 1);
+            monster.entity.base_stats.speed = player_stats.speed;
 
             monster.monster_difficulty = Difficulty::Easy;
             monster.entity.name = "(Easy) ".to_string() + &monster.entity.name;
         },
         2 => {
             monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
-            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
-            monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
-            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
+            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.strength/6, player_stats.strength/4 + 1);
+            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.defense/6, player_stats.defense/4 + 1);
+            monster.entity.base_stats.speed = player_stats.speed;
 
             monster.monster_difficulty = Difficulty::Normal;
             monster.entity.name = "(Normal) ".to_string() + &monster.entity.name;
         },
         3 => {
             monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
-            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
-            monster.entity.base_stats.speed = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
-            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
+            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.strength/3, player_stats.strength/2 + 1);
+            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.defense/3, player_stats.defense/2 + 1);
+            monster.entity.base_stats.speed = player_stats.speed;
 
             monster.monster_difficulty = Difficulty::Hard;
             monster.entity.name = "(Hard) ".to_string() + &monster.entity.name;
@@ -389,48 +390,48 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     let weapon_drop = rand::thread_rng().gen_range(0, 101);
     if weapon_drop <= 10 {
         let item_name = generate_random_weapon_name(Type::Weapon, &monster.monster_difficulty);
-        let mut new_item = Item {name : item_name, item_type : Type::Weapon, modifications : Vec::new()};
+        let mut new_item = Item { name: item_name, item_type: Type::Weapon, modifications: Vec::new() };
 
         generate_item(&mut new_item, &player.weapon, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
-            _ => {/*I don't care.*/},
+            _ => { /*I don't care.*/ },
         }
     }
 
     let head_drop = rand::thread_rng().gen_range(0, 101);
     if head_drop <= 10 {
         let item_name = generate_random_weapon_name(Type::Head, &monster.monster_difficulty);
-        let mut new_item = Item {name : item_name, item_type : Type::Head, modifications : Vec::new()};
+        let mut new_item = Item { name: item_name, item_type: Type::Head, modifications: Vec::new() };
 
         generate_item(&mut new_item, &player.head_item, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
-            _ => {/*I don't care.*/},
+            _ => { /*I don't care.*/ },
         }
     }
 
     let chest_drop = rand::thread_rng().gen_range(0, 101);
     if chest_drop <= 10 {
         let item_name = generate_random_weapon_name(Type::Chest, &monster.monster_difficulty);
-        let mut new_item = Item {name : item_name, item_type : Type::Chest, modifications : Vec::new()};
+        let mut new_item = Item { name: item_name, item_type: Type::Chest, modifications: Vec::new() };
 
         generate_item(&mut new_item, &player.chest_item, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
-            _ => {/*I don't care.*/},
+            _ => { /*I don't care.*/ },
         }
     }
 
     let legs_drop = rand::thread_rng().gen_range(0, 101);
     if legs_drop <= 10 {
         let item_name = generate_random_weapon_name(Type::Legs, &monster.monster_difficulty);
-        let mut new_item = Item {name : item_name, item_type : Type::Legs, modifications : Vec::new()};
+        let mut new_item = Item { name: item_name, item_type: Type::Legs, modifications: Vec::new() };
 
         generate_item(&mut new_item, &player.leg_item, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
-            _ => {/*I don't care.*/},
+            _ => { /*I don't care.*/ },
         }
     }
 
@@ -441,19 +442,24 @@ fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             Difficulty::Normal => 10,
             Difficulty::Hard => 25,
         };
-        let mut potion = Item {name : "Healing Potion".to_string(), item_type : Type::Potion, modifications : Vec::new()};
+        let mut potion = Item { name: "Healing Potion".to_string(), item_type: Type::Potion, modifications: Vec::new() };
 
         potion.modifications.push(StatsMod::Heal(healing_percentage));
 
         match monster.entity.backpack.add_item(potion) {
-            _ => {/*I don't care.*/}
+            _ => { /*I don't care.*/ }
         }
     }
 
     monster
 }
 
-fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty : &Difficulty) {
+fn generate_monster_weapon(min: i32, max: i32) -> Item {
+    let modifications: Vec<StatsMod> = vec!(StatsMod::Damage { min: min, max: max }, StatsMod::AttackSpeed(1));
+    Item { item_type: Type::Weapon, name: "Gnargler".to_string(), modifications: modifications }
+}
+
+fn generate_item(new_item: &mut Item, current_item: &Item, monster_difficulty: &Difficulty) {
     let difficulty_bonus = match monster_difficulty {
         &Difficulty::Easy => { 2 },
         &Difficulty::Normal => { 4 },
@@ -518,20 +524,15 @@ fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty 
 
     //SPECIAL-CASE WHEN WEAPON!
     if current_item.item_type == Type::Weapon ||
-        (current_item.item_type == Type::Nothing && new_item.item_type == Type::Weapon){
-        let min_max_damage = match current_item.item_type {
-            Type::Nothing => {
-                (1, 5)
-            },
-            _ => {current_item.get_damage()},
-        };
+        (current_item.item_type == Type::Nothing && new_item.item_type == Type::Weapon) {
+        let min_max_damage = current_item.get_damage();
 
         let mut rnd_min = rand::thread_rng().gen_range(min_max_damage.0, min_max_damage.0 + difficulty_bonus);
         let mut rnd_max = rand::thread_rng().gen_range(min_max_damage.1, min_max_damage.1 + difficulty_bonus);
 
         //Just make sure that min is <= than max.
         if rnd_min == rnd_max {
-            rnd_max +=1;
+            rnd_max += 1;
         }
         if rnd_min > rnd_max {
             let tmp = rnd_min;
@@ -550,7 +551,7 @@ fn generate_item(new_item : &mut Item, current_item : &Item, monster_difficulty 
     }
 }
 
-fn generate_random_weapon_name(item_type : Type, difficulty : &Difficulty) -> String {
+fn generate_random_weapon_name(item_type: Type, difficulty: &Difficulty) -> String {
     let quality = match difficulty {
         &Difficulty::Easy => "Lesser",
         &Difficulty::Normal => "Good",
@@ -564,13 +565,6 @@ fn generate_random_weapon_name(item_type : Type, difficulty : &Difficulty) -> St
         Type::Weapon => "Sword",
         Type::Nothing | Type::Potion => "Blackhole",
     }.to_string();
-
-    if difficulty == &Difficulty::Hard {
-        let suffixes = vec!["of Dragon", "of Ghizzle", "of Hammer", "of Khazak"];
-        let suffix = suffixes[rand::thread_rng().gen_range(0, suffixes.len())].to_string();
-
-        return format!("{} {} {}", quality, part, suffix);
-    }
 
     return format!("{} {}", quality, part);
 }
