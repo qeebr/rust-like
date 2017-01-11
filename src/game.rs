@@ -607,7 +607,7 @@ fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<
 
             effect_list.push(attack);
         } else if distance <= 4f32 {
-            let direction = if row_diff > 0 && col_diff > 0 {
+            let direction = if row_diff >= 0 && col_diff >= 0 {
                 if row_diff > col_diff {
                     Input::MoveDown
                 } else {
@@ -619,7 +619,7 @@ fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<
                 } else {
                     Input::MoveLeft
                 }
-            } else if row_diff < 0 && col_diff < 0 {
+            } else if row_diff <= 0 && col_diff <= 0 {
                 if row_diff < col_diff {
                     Input::MoveUp
                 } else {
@@ -656,19 +656,24 @@ fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<
                 continue;
             }
 
+            let mut collision_with_other_enemy = false;
+
             for inner_index in 0..size {
                 if inner_index == index {
                     continue;
                 }
 
                 if !enemies[inner_index].entity.is_death() && row_diff == enemies[inner_index].entity.pos_row && col_diff == enemies[inner_index].entity.pos_col {
+                    collision_with_other_enemy = true;
                     break;
                 }
             }
 
-            let mut mut_enemy = &mut enemies[index];
-            mut_enemy.entity.pos_row = row_diff as i32;
-            mut_enemy.entity.pos_col = col_diff as i32;
+            if !collision_with_other_enemy {
+                let mut mut_enemy = &mut enemies[index];
+                mut_enemy.entity.pos_row = row_diff as i32;
+                mut_enemy.entity.pos_col = col_diff as i32;
+            }
         }
     }
 }
