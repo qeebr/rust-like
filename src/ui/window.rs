@@ -24,6 +24,13 @@ impl Window {
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     }
 
+    pub fn draw_menu() {
+        let message = "Press Q to Return to Game".to_string();
+        mvprintw(12, (85-message.len() as i32)/2, &message);
+        let message = "Press E to Exit".to_string();
+        mvprintw(13, (85-message.len() as i32)/2, &message);
+    }
+
     pub fn draw_entity(player : &Entity, character_pointer: Type, active : bool) {
         let character_offset_row = 2;
         let character_offset_col = 0;

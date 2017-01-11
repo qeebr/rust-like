@@ -17,27 +17,22 @@ use super::log::*;
 Was kann ich verbessern:
 
     Generierung
-    Mehr Monster spawnen.
-    Drop hat atm. nur positive oder neutrale auswirkung aber keine negativen. Lesser -> [Viel Negativ; Neutral+1] Good -> [Negativ; Neutral + 2], Master -> [Neutral: Positiv]
-    (1) Seed der Maps fest machen,
-    Alle 10 oder 20 Level/Monster ein Boss-Monster einfügen, das richtig BÄM macht -> Krasseren Loot droppt, -> den Zusatz aus Master rausnehmen und nur für diese Klasse von Items verwenden.
-    Die Stats der Items ebenfalls in KLassen einteilen, das Helme immer weniger haben wie Chests und Chests am meisten und Legs am wenigsten oder so.
-    Den Schwierigkeitsgrad kann leicht erhöht werden, für einfach mehr für mittel, schwierig ist schon gut so. Das Generieren von Strength+Defense muss nochmal überarbeitet werden,
+    * Drop hat atm. nur positive oder neutrale auswirkung aber keine negativen. Lesser -> [Viel Negativ; Neutral+1] Good -> [Negativ; Neutral + 2], Master -> [Neutral: Positiv]
+    * (1) Seed der Maps fest machen,
+    * Alle 10 oder 20 Level/Monster ein Boss-Monster einfügen, das richtig BÄM macht -> Krasseren Loot droppt, -> den Zusatz aus Master rausnehmen und nur für diese Klasse von Items verwenden.
+    * Die Stats der Items ebenfalls in KLassen einteilen, das Helme immer weniger haben wie Chests und Chests am meisten und Legs am wenigsten oder so.
+    * Genierung von Monster ist atm zu unflexibel und großartig falsch.
 
     UI
-    (1) Anzeige wievieltes Levels man atm. ist.
-    Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
-    Atm. nur ein Monster-Symbol.
-    Zucker anzeigen, ob Item besser ist.
+    * (1) Anzeige wievieltes Levels man atm. ist.
+    * Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
+    * Atm. nur ein Monster-Symbol.
+    * Zucker anzeigen, ob Item besser ist.
 
     Game
-    InventoryState nicht zurücksetzen.
-    Ausversehen, das Spiel verlassen -> pseudo Menü-State einführen, bei Q wieder zuruck und bei E beenden.
-    Spezial-Attacken einfügen.
-    Looten von mehreren toten Enemies anzeigen und ermöglichen
-    Monster-Generierung balancieren.
-
-    Reihenfolgen:
+    * Spezial-Attacken einfügen.
+    * Looten von mehreren toten Enemies anzeigen und ermöglichen
+    * Monster-Generierung balancieren.
 
 */
 
@@ -79,15 +74,16 @@ pub fn game() {
                 set_player_and_monsters(&map, &mut player, &mut enemies);
                 Action::Game
             }
+            Action::Menu => {
+                handle_menu_state(input)
+            }
             Action::Quit => {
                 break;
             }
         };
 
-        if (game_state == Action::Game && next_game_state == Action::Loot) ||
-            (game_state == Action::Game && next_game_state == Action::Inventory) {
+        if game_state == Action::Game && next_game_state == Action::Loot {
             backpack_index = 0;
-            inventory_pointer = InventoryPointer::Backpack;
         }
 
         if next_game_state == Action::Quit {
@@ -105,6 +101,8 @@ pub fn game() {
         } else if game_state == Action::Inventory {
             Window::draw_loot(&player.backpack, backpack_index, inventory_pointer == InventoryPointer::Backpack, &"".to_string());
             Window::draw_entity(&player, character_pointer, inventory_pointer == InventoryPointer::Character);
+        } else if game_state == Action::Menu {
+            Window::draw_menu();
         }
     }
 
@@ -151,7 +149,20 @@ enum Action {
     Loot,
     Inventory,
     NextLevel,
+    Menu,
     Quit,
+}
+
+fn handle_menu_state(input: Input) -> Action {
+    match input {
+        Input::Use => {
+            Action::Quit
+        },
+        Input::Quit => {
+            Action::Game
+        }
+        _ => {Action::Menu}
+    }
 }
 
 fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer: &mut InventoryPointer, backpack_index: &mut usize, character_pointer: &mut Type, input: Input) -> Action {
@@ -323,7 +334,7 @@ fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
             }
         },
 
-        Input::Quit => { return Action::Quit },
+        Input::Quit => { return Action::Menu },
 
         Input::Nothing | Input::Drop => {},
     }
