@@ -82,14 +82,14 @@ pub fn generate_level() -> Level {
         let mut position_found = false;
 
         while retries < max_retries {
-            let mut collsion = false;
+            let mut collision = false;
             for index in 0..rooms.len() {
                 if rooms[index as usize].intersect(&room) {
-                    collsion = true;
+                    collision = true;
                 }
             }
 
-            if collsion {
+            if collision {
                 retries += 1;
             } else {
                 position_found = true;
@@ -193,7 +193,7 @@ pub fn generate_level() -> Level {
     //connect all rooms with corridors
     connect_rooms(&mut rooms, &mut level);
 
-    //set meta-informations.
+    //set meta-information.
     add_meta_information(&rooms, &mut level);
 
     level

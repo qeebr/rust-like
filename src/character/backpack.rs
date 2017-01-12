@@ -110,7 +110,7 @@ mod tests {
         let add_index = BACKPACK_SIZE / 2;
         let special_name = "Magic Shirt";
 
-        // At the beginnning Backpack is empty.
+        // At the beginning Backpack is empty.
         assert_eq!(true, backpack.has_space());
 
         // Add Items to Backpack.
