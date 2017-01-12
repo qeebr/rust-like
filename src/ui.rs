@@ -1,14 +1,14 @@
 extern crate ncurses;
 
 use ncurses::*;
-use super::super::level::level::*;
-use super::super::character::entity::*;
-use super::super::character::monster::*;
-use super::super::character::backpack::*;
-use super::super::character::item::*;
-use super::super::character::stats::*;
-use super::super::combat::effect::*;
-use super::super::log::*;
+use super::level::*;
+use super::character::entity::*;
+use super::character::monster::*;
+use super::character::backpack::*;
+use super::character::item::*;
+use super::character::stats::*;
+use super::combat::effect::*;
+use super::log::*;
 
 pub struct Window;
 

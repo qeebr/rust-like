@@ -3,7 +3,7 @@ extern crate rand;
 use std;
 use rand::Rng;
 
-use super::level::*;
+use super::super::level::*;
 
 struct Room {
     row: usize,
