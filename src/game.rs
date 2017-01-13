@@ -28,9 +28,7 @@ Was kann ich verbessern:
 
     Game
     * Spezial-Attacken einfügen.
-    * Looten von mehreren toten Enemies anzeigen und ermöglichen
     * Monster-Generierung balancieren.
-
 */
 
 pub fn game() {
@@ -48,6 +46,7 @@ pub fn game() {
     let mut backpack_index: usize = 0;
     let mut inventory_pointer = InventoryPointer::Backpack;
     let mut character_pointer = Type::Head;
+    let mut enemy_loot_index: usize = 0;
 
     Window::init();
     Window::draw(&mut log, &map, &player, &enemies, &effect_list);
@@ -57,10 +56,10 @@ pub fn game() {
 
         let next_game_state = match game_state {
             Action::Game => {
-                handle_game_state(&mut log, &map, &mut player, &mut enemies, &mut effect_list, input)
+                handle_game_state(&mut log, &map, &mut player, &mut enemies, &mut effect_list, &mut enemy_loot_index, input)
             },
             Action::Loot => {
-                handle_loot_state(&mut log, &mut player, &mut enemies, &mut backpack_index, input)
+                handle_loot_state(&mut log, &mut player, &mut enemies, &mut backpack_index, enemy_loot_index, input)
             }
             Action::Inventory => {
                 handle_inventory_state(&mut log, &mut player, &mut inventory_pointer, &mut backpack_index, &mut character_pointer, input)
@@ -92,7 +91,7 @@ pub fn game() {
         Window::draw(&mut log, &map, &player, &enemies, &effect_list);
 
         if game_state == Action::Loot {
-            let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
+            let enemy = &enemies[enemy_loot_index];
 
             Window::draw_loot(&enemy.entity.backpack, backpack_index, true, &enemy.entity.name)
         } else if game_state == Action::Inventory {
@@ -158,7 +157,7 @@ fn handle_menu_state(input: Input) -> Action {
         Input::Quit => {
             Action::Game
         }
-        _ => {Action::Menu}
+        _ => { Action::Menu }
     }
 }
 
@@ -264,10 +263,7 @@ fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer:
     Action::Inventory
 }
 
-fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, input: Input) -> Action {
-    let enemy_index = enemies.iter().position(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col).unwrap();
-
-
+fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, enemy_loot_index : usize, input: Input) -> Action {
     match input {
         Input::MoveUp => {
             if *backpack_index > 0 {
@@ -275,17 +271,17 @@ fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monst
             }
         },
         Input::MoveDown => {
-            if !enemies[enemy_index].entity.backpack.empty_slot(*backpack_index + 1) {
+            if !enemies[enemy_loot_index].entity.backpack.empty_slot(*backpack_index + 1) {
                 *backpack_index += 1;
             }
         },
 
         Input::Use => {
             if player.backpack.has_space() {
-                let item = enemies[enemy_index].entity.backpack.items[*backpack_index].clone();
+                let item = enemies[enemy_loot_index].entity.backpack.items[*backpack_index].clone();
                 log.add_message(format!("Item {} added to Backpack", item.name));
 
-                enemies[enemy_index].entity.backpack.remove_item(*backpack_index);
+                enemies[enemy_loot_index].entity.backpack.remove_item(*backpack_index);
                 match player.backpack.add_item(item) {
                     Result::Err(..) => { panic!("Error") },
                     _ => {},
@@ -303,7 +299,7 @@ fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monst
     Action::Loot
 }
 
-fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, input: Input) -> Action {
+fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, enemy_loot_index : &mut usize, input: Input) -> Action {
     effect_list.clear();
 
     match input {
@@ -320,7 +316,18 @@ fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &
 
             match enemy {
                 Option::Some(..) => {
-                    return Action::Loot
+                    let enemy_with_loot = enemies.iter().position(|x| x.entity.backpack.size() > 0 && x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col);
+
+                    match enemy_with_loot {
+                        Option::Some(value) => {
+                            *enemy_loot_index = value;
+                            return Action::Loot;
+                        },
+                        _ => {
+                            log.add_message("Nothing to loot here.".to_string());
+                            return Action::Game;
+                        }
+                    }
                 },
                 _ => {
                     if map.meta[player.pos_row as usize][player.pos_col as usize] == Tile::Next {
