@@ -3,6 +3,10 @@ pub struct Log {
 }
 
 impl Log {
+    pub fn new() -> Log {
+        Log {messages: Vec::new()}
+    }
+
     pub fn add_message(&mut self, msg: String) {
         self.messages.push(msg);
     }
@@ -21,7 +25,7 @@ impl Log {
 
 #[test]
 fn test_log() {
-    let mut log = Log {messages: Vec::new()};
+    let mut log = Log::new();
 
     let foo = "foo".to_string();
     let bar = "bar".to_string();

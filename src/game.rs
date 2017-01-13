@@ -24,113 +24,394 @@ Was kann ich verbessern:
     * (1) Anzeige wievieltes Levels man atm. ist.
     * Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
     * Atm. nur ein Monster-Symbol.
-    * Zucker anzeigen, ob Item besser ist.
+    * Zucker anzeigen ob Item besser ist.
 
     Game
     * Spezial-Attacken einfügen.
     * Monster-Generierung balancieren.
 */
 
-pub fn game() {
-    let mut log = Log { messages: Vec::new() };
-    let mut map = generate_level();
-    let mut player = Entity::new();
-    player.name = "qriz".to_string();
+pub struct Game {
+    log: Log,
+    map: Level,
+    player: Entity,
 
-    let mut enemies: Vec<Monster> = Vec::new();
-    let mut effect_list: Vec<WeaponAttack> = Vec::new();
+    enemies: Vec<Monster>,
+    effect_list: Vec<WeaponAttack>,
 
-    set_player_and_monsters(&map, &mut player, &mut enemies);
-
-    let mut game_state = Action::Game;
-    let mut backpack_index: usize = 0;
-    let mut inventory_pointer = InventoryPointer::Backpack;
-    let mut character_pointer = Type::Head;
-    let mut enemy_loot_index: usize = 0;
-
-    Window::init();
-    Window::draw(&mut log, &map, &player, &enemies, &effect_list);
-
-    loop {
-        let input = Window::get_input();
-
-        let next_game_state = match game_state {
-            Action::Game => {
-                handle_game_state(&mut log, &map, &mut player, &mut enemies, &mut effect_list, &mut enemy_loot_index, input)
-            },
-            Action::Loot => {
-                handle_loot_state(&mut log, &mut player, &mut enemies, &mut backpack_index, enemy_loot_index, input)
-            }
-            Action::Inventory => {
-                handle_inventory_state(&mut log, &mut player, &mut inventory_pointer, &mut backpack_index, &mut character_pointer, input)
-            }
-            Action::NextLevel => {
-                enemies.clear();
-                map = generate_level();
-                set_player_and_monsters(&map, &mut player, &mut enemies);
-                Action::Game
-            }
-            Action::Menu => {
-                handle_menu_state(input)
-            }
-            Action::Quit => {
-                break;
-            }
-        };
-
-        if game_state == Action::Game && next_game_state == Action::Loot {
-            backpack_index = 0;
-        }
-
-        if next_game_state == Action::Quit {
-            break;
-        } else {
-            game_state = next_game_state;
-        }
-
-        Window::draw(&mut log, &map, &player, &enemies, &effect_list);
-
-        if game_state == Action::Loot {
-            let enemy = &enemies[enemy_loot_index];
-
-            Window::draw_loot(&enemy.entity.backpack, backpack_index, true, &enemy.entity.name)
-        } else if game_state == Action::Inventory {
-            Window::draw_loot(&player.backpack, backpack_index, inventory_pointer == InventoryPointer::Backpack, &"".to_string());
-            Window::draw_entity(&player, character_pointer, inventory_pointer == InventoryPointer::Character);
-        } else if game_state == Action::Menu {
-            Window::draw_menu();
-        }
-    }
-
-    Window::clear();
+    game_state: Action,
+    backpack_index: usize,
+    inventory_pointer: InventoryPointer,
+    character_pointer: Type,
+    enemy_loot_index: usize,
 }
 
-fn set_player_and_monsters(map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>) {
-    let mut row_index = 0;
-    for meta_row in &map.meta {
-        let mut col_index = 0;
-        for meta_col in meta_row {
-            match meta_col {
-                &Tile::PlSpawn => {
-                    player.pos_row = row_index;
-                    player.pos_col = col_index;
-                },
-                &Tile::MnSpawn { mn_type, difficulty } => {
-                    let mut monster = create_monster(&player, mn_type, difficulty);
+impl Game {
+    pub fn new() -> Game {
 
-                    monster.entity.pos_row = row_index;
-                    monster.entity.pos_col = col_index;
+        Game{
+            log: Log::new(),
+            map: Level::new(),
+            player: Entity::new(),
 
-                    enemies.push(monster);
+            enemies: Vec::new(),
+            effect_list: Vec::new(),
+
+            game_state: Action::Game,
+            backpack_index:0,
+            inventory_pointer: InventoryPointer::Backpack,
+            character_pointer: Type::Head,
+            enemy_loot_index:0
+        }
+    }
+
+    pub fn init(&mut self) {
+        self.player.name = "qriz".to_string();
+
+        self.map = generate_level();
+
+        self.set_player_and_monsters();
+
+        Window::init();
+    }
+
+    pub fn run(&mut self) {
+        Window::draw(&mut self.log, &self.map, &self.player, &self.enemies, &self.effect_list);
+
+        loop {
+            let input = Window::get_input();
+
+            let next_game_state = match self.game_state {
+                Action::Game => {
+                    self.handle_game_state(input)
                 },
-                _ => (),
+                Action::Loot => {
+                    self.handle_loot_state(input)
+                }
+                Action::Inventory => {
+                    self.handle_inventory_state(input)
+                }
+                Action::NextLevel => {
+                    self.enemies.clear();
+                    self.map = generate_level();
+                    self.set_player_and_monsters();
+                    Action::Game
+                }
+                Action::Menu => {
+                    self.handle_menu_state(input)
+                }
+                Action::Quit => {
+                    break;
+                }
+            };
+
+            if self.game_state == Action::Game && next_game_state == Action::Loot {
+                self.backpack_index = 0;
             }
 
-            col_index += 1;
+            if next_game_state == Action::Quit {
+                break;
+            } else {
+                self.game_state = next_game_state;
+            }
+
+            Window::draw(&mut self.log, &self.map, &self.player, &self.enemies, &self.effect_list);
+
+            if self.game_state == Action::Loot {
+                let enemy = &self.enemies[self.enemy_loot_index];
+
+                Window::draw_loot(&enemy.entity.backpack, self.backpack_index, true, &enemy.entity.name)
+            } else if self.game_state == Action::Inventory {
+                Window::draw_loot(&self.player.backpack, self.backpack_index, self.inventory_pointer == InventoryPointer::Backpack, &"".to_string());
+                Window::draw_entity(&self.player, self.character_pointer, self.inventory_pointer == InventoryPointer::Character);
+            } else if self.game_state == Action::Menu {
+                Window::draw_menu();
+            }
+        }
+    }
+
+    pub fn cleanup(&mut self) {
+        Window::clear();
+    }
+
+    fn set_player_and_monsters(&mut self) {
+        let mut row_index = 0;
+        for meta_row in &self.map.meta {
+            let mut col_index = 0;
+            for meta_col in meta_row {
+                match meta_col {
+                    &Tile::PlSpawn => {
+                        self.player.pos_row = row_index;
+                        self.player.pos_col = col_index;
+                    },
+                    &Tile::MnSpawn { mn_type, difficulty } => {
+                        let mut monster = create_monster(&self.player, mn_type, difficulty);
+
+                        monster.entity.pos_row = row_index;
+                        monster.entity.pos_col = col_index;
+
+                        self.enemies.push(monster);
+                    },
+                    _ => (),
+                }
+
+                col_index += 1;
+            }
+
+            row_index += 1;
+        }
+    }
+
+    fn handle_menu_state(&self, input: Input) -> Action {
+        match input {
+            Input::Use => {
+                Action::Quit
+            },
+            Input::Quit => {
+                Action::Game
+            }
+            _ => { Action::Menu }
+        }
+    }
+
+    fn handle_inventory_state(&mut self, input: Input) -> Action {
+        match self.inventory_pointer {
+            InventoryPointer::Backpack => {
+                match input {
+                    Input::MoveUp => {
+                        if self.backpack_index > 0 {
+                            self.backpack_index -= 1;
+                        }
+                    },
+                    Input::MoveDown => {
+                        if !self.player.backpack.empty_slot(self.backpack_index + 1) {
+                            self.backpack_index += 1;
+                        }
+                    },
+                    Input::Use => {
+                        let new_item: Item = self.player.backpack.items[self.backpack_index].clone();
+
+                        if new_item.item_type == Type::Potion {
+                            let max_life = self.player.calculate_max_life();
+                            let heal_percentage = new_item.get_heal_percentage();
+                            let actual_heal = max_life / heal_percentage;
+
+                            self.player.current_life = self.player.current_life + actual_heal;
+                            if self.player.current_life > max_life {
+                                self.player.current_life = max_life;
+                            }
+
+                            self.player.backpack.remove_item(self.backpack_index);
+                            self.log.add_message(format!("Player {} have been healed.", self.player.name));
+                        } else {
+                            let name_clone = new_item.name.clone();
+                            self.player.backpack.remove_item(self.backpack_index);
+                            let old_item = self.player.equip(new_item);
+
+                            if old_item.item_type != Type::Nothing {
+                                self.player.backpack.insert_item(self.backpack_index, old_item);
+                            }
+
+                            self.log.add_message(format!("Player {} equipped {}", self.player.name, name_clone));
+                        }
+                    },
+                    Input::Drop => {
+                        let new_item: Item = self.player.backpack.items[self.backpack_index].clone();
+
+                        if new_item.item_type != Type::Nothing {
+                            self.player.backpack.remove_item(self.backpack_index);
+                            self.log.add_message(format!("Player {} dropped {}.", self.player.name, new_item.name));
+                        }
+                    }
+
+                    Input::MoveLeft => {
+                        self.inventory_pointer = InventoryPointer::Character;
+                    }
+
+                    Input::Quit => { return Action::Game },
+                    _ => {},
+                };
+            },
+            InventoryPointer::Character => {
+                match input {
+                    Input::MoveUp => {
+                        match self.character_pointer {
+                            Type::Chest => {
+                                self.character_pointer = Type::Head;
+                            },
+                            Type::Legs => {
+                                self.character_pointer = Type::Chest;
+                            },
+                            Type::Weapon => {
+                                self.character_pointer = Type::Legs;
+                            },
+                            _ => {},
+                        }
+                    },
+                    Input::MoveDown => {
+                        match self.character_pointer {
+                            Type::Head => {
+                                self.character_pointer = Type::Chest;
+                            }
+                            Type::Chest => {
+                                self.character_pointer = Type::Legs;
+                            },
+                            Type::Legs => {
+                                self.character_pointer = Type::Weapon;
+                            },
+                            _ => {},
+                        }
+                    }
+
+                    Input::MoveRight => {
+                        self.inventory_pointer = InventoryPointer::Backpack;
+                    },
+
+                    Input::Quit => { return Action::Game },
+                    _ => {},
+                }
+            },
         }
 
-        row_index += 1;
+        Action::Inventory
     }
+
+    fn handle_loot_state(&mut self, input: Input) -> Action {
+        match input {
+            Input::MoveUp => {
+                if self.backpack_index > 0 {
+                    self.backpack_index -= 1;
+                }
+            },
+            Input::MoveDown => {
+                if !self.enemies[self.enemy_loot_index].entity.backpack.empty_slot(self.backpack_index + 1) {
+                    self.backpack_index += 1;
+                }
+            },
+
+            Input::Use => {
+                if self.player.backpack.has_space() {
+                    let item = self.enemies[self.enemy_loot_index].entity.backpack.items[self.backpack_index].clone();
+                    self.log.add_message(format!("Item {} added to Backpack", item.name));
+
+                    self.enemies[self.enemy_loot_index].entity.backpack.remove_item(self.backpack_index);
+                    match self.player.backpack.add_item(item) {
+                        Result::Err(..) => { panic!("Error") },
+                        _ => {},
+                    }
+                } else {
+                    self.log.add_message("Backpack ist full!".to_string());
+                }
+            },
+
+            Input::Quit => { return Action::Game; },
+            _ => {},
+        }
+
+
+        Action::Loot
+    }
+
+    fn handle_game_state(&mut self, input: Input) -> Action {
+        self.effect_list.clear();
+
+        match input {
+            Input::MoveUp | Input::MoveDown | Input::MoveLeft | Input::MoveRight => {
+                self.handle_move(input);
+            },
+
+            Input::AttackUp | Input::AttackDown | Input::AttackLeft | Input::AttackRight => {
+                self.handle_attack(input);
+            },
+
+            Input::Use => {
+                let enemy = self.enemies.iter().find(|x| x.entity.pos_row == self.player.pos_row && x.entity.pos_col == self.player.pos_col);
+
+                match enemy {
+                    Option::Some(..) => {
+                        let enemy_with_loot = self.enemies.iter().position(|x| x.entity.backpack.size() > 0 && x.entity.pos_row == self.player.pos_row && x.entity.pos_col == self.player.pos_col);
+
+                        match enemy_with_loot {
+                            Option::Some(value) => {
+                                self.enemy_loot_index = value;
+                                return Action::Loot;
+                            },
+                            _ => {
+                                self.log.add_message("Nothing to loot here.".to_string());
+                                return Action::Game;
+                            }
+                        }
+                    },
+                    _ => {
+                        if self.map.meta[self.player.pos_row as usize][self.player.pos_col as usize] == Tile::Next {
+                            return Action::NextLevel;
+                        }
+                        return Action::Inventory;
+                    },
+                }
+            },
+
+            Input::Quit => { return Action::Menu },
+
+            Input::Nothing | Input::Drop => {},
+        }
+
+        handle_ki(&mut self.log, &self.map, &mut self.player, &mut self.enemies, &mut self.effect_list);
+
+        Action::Game
+    }
+
+    fn handle_attack(&mut self, direction: Input) {
+        let attack_direction = match direction {
+            Input::AttackUp => AttackDirection::North,
+            Input::AttackDown => AttackDirection::South,
+            Input::AttackLeft => AttackDirection::West,
+            Input::AttackRight => AttackDirection::East,
+            _ => unreachable!(),
+        };
+
+        let attack = WeaponAttack::new(&self.player, attack_direction);
+
+        for enemy in &mut self.enemies {
+            for &(row, col) in &attack.area {
+                if enemy.entity.pos_row == row && enemy.entity.pos_col == col {
+                    Fight::weapon_hit(&mut self.log, RndGenerator, &self.player, &mut enemy.entity);
+                }
+            }
+        }
+
+        self.effect_list.push(attack);
+    }
+
+    fn handle_move(&mut self, direction: Input) {
+        let mut row_diff = self.player.pos_row;
+        let mut col_diff = self.player.pos_col;
+
+        match direction {
+            Input::MoveUp => row_diff -= 1,
+            Input::MoveDown => row_diff += 1,
+            Input::MoveLeft => col_diff -= 1,
+            Input::MoveRight => col_diff += 1,
+
+            _ => unreachable!(),
+        }
+
+        //Collision with Wall uncool.
+        if self.map.level[row_diff as usize][col_diff as usize] == Tile::Wall {
+            return;
+        }
+
+        //Collision with alive entity uncool.
+        for enemy in &self.enemies {
+            if !enemy.entity.is_death() && row_diff == enemy.entity.pos_row && col_diff == enemy.entity.pos_col {
+                return;
+            }
+        }
+
+        self.player.pos_row = row_diff as i32;
+        self.player.pos_col = col_diff as i32;
+    }
+
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -147,254 +428,4 @@ enum Action {
     NextLevel,
     Menu,
     Quit,
-}
-
-fn handle_menu_state(input: Input) -> Action {
-    match input {
-        Input::Use => {
-            Action::Quit
-        },
-        Input::Quit => {
-            Action::Game
-        }
-        _ => { Action::Menu }
-    }
-}
-
-fn handle_inventory_state(log: &mut Log, player: &mut Entity, inventory_pointer: &mut InventoryPointer, backpack_index: &mut usize, character_pointer: &mut Type, input: Input) -> Action {
-    match inventory_pointer {
-        &mut InventoryPointer::Backpack => {
-            match input {
-                Input::MoveUp => {
-                    if *backpack_index > 0 {
-                        *backpack_index -= 1;
-                    }
-                },
-                Input::MoveDown => {
-                    if !player.backpack.empty_slot(*backpack_index + 1) {
-                        *backpack_index += 1;
-                    }
-                },
-                Input::Use => {
-                    let new_item: Item = player.backpack.items[*backpack_index].clone();
-
-                    if new_item.item_type == Type::Potion {
-                        let max_life = player.calculate_max_life();
-                        let heal_percentage = new_item.get_heal_percentage();
-                        let actual_heal = max_life / heal_percentage;
-
-                        player.current_life = player.current_life + actual_heal;
-                        if player.current_life > max_life {
-                            player.current_life = max_life;
-                        }
-
-                        player.backpack.remove_item(*backpack_index);
-                        log.add_message(format!("Player {} have been healed.", player.name));
-                    } else {
-                        let name_clone = new_item.name.clone();
-                        player.backpack.remove_item(*backpack_index);
-                        let old_item = player.equip(new_item);
-
-                        if old_item.item_type != Type::Nothing {
-                            player.backpack.insert_item(*backpack_index, old_item);
-                        }
-
-                        log.add_message(format!("Player {} equipped {}", player.name, name_clone));
-                    }
-                },
-                Input::Drop => {
-                    let new_item: Item = player.backpack.items[*backpack_index].clone();
-
-                    if new_item.item_type != Type::Nothing {
-                        player.backpack.remove_item(*backpack_index);
-                        log.add_message(format!("Player {} dropped {}.", player.name, new_item.name));
-                    }
-                }
-
-                Input::MoveLeft => {
-                    *inventory_pointer = InventoryPointer::Character;
-                }
-
-                Input::Quit => { return Action::Game },
-                _ => {},
-            };
-        },
-        &mut InventoryPointer::Character => {
-            match input {
-                Input::MoveUp => {
-                    match character_pointer {
-                        &mut Type::Chest => {
-                            *character_pointer = Type::Head;
-                        },
-                        &mut Type::Legs => {
-                            *character_pointer = Type::Chest;
-                        },
-                        &mut Type::Weapon => {
-                            *character_pointer = Type::Legs;
-                        },
-                        _ => {},
-                    }
-                },
-                Input::MoveDown => {
-                    match character_pointer {
-                        &mut Type::Head => {
-                            *character_pointer = Type::Chest;
-                        }
-                        &mut Type::Chest => {
-                            *character_pointer = Type::Legs;
-                        },
-                        &mut Type::Legs => {
-                            *character_pointer = Type::Weapon;
-                        },
-                        _ => {},
-                    }
-                }
-
-                Input::MoveRight => {
-                    *inventory_pointer = InventoryPointer::Backpack;
-                },
-
-                Input::Quit => { return Action::Game },
-                _ => {},
-            }
-        },
-    }
-
-    Action::Inventory
-}
-
-fn handle_loot_state(log: &mut Log, player: &mut Entity, enemies: &mut Vec<Monster>, backpack_index: &mut usize, enemy_loot_index : usize, input: Input) -> Action {
-    match input {
-        Input::MoveUp => {
-            if *backpack_index > 0 {
-                *backpack_index -= 1;
-            }
-        },
-        Input::MoveDown => {
-            if !enemies[enemy_loot_index].entity.backpack.empty_slot(*backpack_index + 1) {
-                *backpack_index += 1;
-            }
-        },
-
-        Input::Use => {
-            if player.backpack.has_space() {
-                let item = enemies[enemy_loot_index].entity.backpack.items[*backpack_index].clone();
-                log.add_message(format!("Item {} added to Backpack", item.name));
-
-                enemies[enemy_loot_index].entity.backpack.remove_item(*backpack_index);
-                match player.backpack.add_item(item) {
-                    Result::Err(..) => { panic!("Error") },
-                    _ => {},
-                }
-            } else {
-                log.add_message("Backpack ist full!".to_string());
-            }
-        },
-
-        Input::Quit => { return Action::Game; },
-        _ => {},
-    }
-
-
-    Action::Loot
-}
-
-fn handle_game_state(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, enemy_loot_index : &mut usize, input: Input) -> Action {
-    effect_list.clear();
-
-    match input {
-        Input::MoveUp | Input::MoveDown | Input::MoveLeft | Input::MoveRight => {
-            handle_move(map, player, enemies, input);
-        },
-
-        Input::AttackUp | Input::AttackDown | Input::AttackLeft | Input::AttackRight => {
-            handle_attack(log, player, enemies, effect_list, input);
-        },
-
-        Input::Use => {
-            let enemy = enemies.iter().find(|x| x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col);
-
-            match enemy {
-                Option::Some(..) => {
-                    let enemy_with_loot = enemies.iter().position(|x| x.entity.backpack.size() > 0 && x.entity.pos_row == player.pos_row && x.entity.pos_col == player.pos_col);
-
-                    match enemy_with_loot {
-                        Option::Some(value) => {
-                            *enemy_loot_index = value;
-                            return Action::Loot;
-                        },
-                        _ => {
-                            log.add_message("Nothing to loot here.".to_string());
-                            return Action::Game;
-                        }
-                    }
-                },
-                _ => {
-                    if map.meta[player.pos_row as usize][player.pos_col as usize] == Tile::Next {
-                        return Action::NextLevel;
-                    }
-                    return Action::Inventory;
-                },
-            }
-        },
-
-        Input::Quit => { return Action::Menu },
-
-        Input::Nothing | Input::Drop => {},
-    }
-
-    handle_ki(log, map, player, enemies, effect_list);
-
-    Action::Game
-}
-
-fn handle_attack(log: &mut Log, player: &Entity, enemies: &mut Vec<Monster>, effect_list: &mut Vec<WeaponAttack>, direction: Input) {
-    let attack_direction = match direction {
-        Input::AttackUp => AttackDirection::North,
-        Input::AttackDown => AttackDirection::South,
-        Input::AttackLeft => AttackDirection::West,
-        Input::AttackRight => AttackDirection::East,
-        _ => unreachable!(),
-    };
-
-    let attack = WeaponAttack::new(player, attack_direction);
-
-    for mut enemy in enemies {
-        for &(row, col) in &attack.area {
-            if enemy.entity.pos_row == row && enemy.entity.pos_col == col {
-                Fight::weapon_hit(log, RndGenerator, player, &mut enemy.entity);
-            }
-        }
-    }
-
-    effect_list.push(attack);
-}
-
-fn handle_move(map: &Level, player: &mut Entity, enemies: &Vec<Monster>, direction: Input) {
-    let mut row_diff = player.pos_row;
-    let mut col_diff = player.pos_col;
-
-    match direction {
-        Input::MoveUp => row_diff -= 1,
-        Input::MoveDown => row_diff += 1,
-        Input::MoveLeft => col_diff -= 1,
-        Input::MoveRight => col_diff += 1,
-
-        _ => unreachable!(),
-    }
-
-    //Collision with Wall uncool.
-    if map.level[row_diff as usize][col_diff as usize] == Tile::Wall {
-        return;
-    }
-
-    //Collision with alive entity uncool.
-    for enemy in enemies {
-        if !enemy.entity.is_death() && row_diff == enemy.entity.pos_row && col_diff == enemy.entity.pos_col {
-            return;
-        }
-    }
-
-    player.pos_row = row_diff as i32;
-    player.pos_col = col_diff as i32;
 }

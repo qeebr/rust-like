@@ -11,5 +11,8 @@ pub mod gen;
 pub mod ki;
 
 fn main() {
-    game::game();
+    let mut game = game::Game::new();
+    game.init();
+    game.run();
+    game.cleanup();
 }
