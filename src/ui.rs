@@ -26,12 +26,12 @@ impl Window {
 
     pub fn draw_menu() {
         let message = "Press Q to Return to Game".to_string();
-        mvprintw(12, (85-message.len() as i32)/2, &message);
+        mvprintw(12, (85 - message.len() as i32) / 2, &message);
         let message = "Press E to Exit".to_string();
-        mvprintw(13, (85-message.len() as i32)/2, &message);
+        mvprintw(13, (85 - message.len() as i32) / 2, &message);
     }
 
-    pub fn draw_entity(player : &Entity, character_pointer: Type, active : bool) {
+    pub fn draw_entity(player: &Entity, character_pointer: Type, active: bool) {
         let character_offset_row = 2;
         let character_offset_col = 0;
 
@@ -56,12 +56,10 @@ impl Window {
                 Type::Chest => {
                     mvaddch((character_offset_row + 1) as i32, character_offset_col, resolve_item_cursor());
                     Window::draw_item(&player.chest_item);
-
                 },
                 Type::Legs => {
                     mvaddch((character_offset_row + 2) as i32, character_offset_col, resolve_item_cursor());
                     Window::draw_item(&player.leg_item);
-
                 },
                 Type::Weapon => {
                     mvaddch((character_offset_row + 3) as i32, character_offset_col, resolve_item_cursor());
@@ -86,7 +84,7 @@ impl Window {
 
         for attribute in &item.modifications {
             match attribute {
-                &StatsMod::Damage{min, max} => {
+                &StatsMod::Damage { min, max } => {
                     mvprintw(row as i32, item_offset_col, &format!("Damage {}-{}", min, max));
                 },
                 &StatsMod::AttackSpeed(val) => {
@@ -116,7 +114,7 @@ impl Window {
         }
     }
 
-    pub fn draw_loot(backpack: &Backpack, backpack_index: usize, active : bool, name : &String) {
+    pub fn draw_loot(backpack: &Backpack, backpack_index: usize, active: bool, name: &String) {
         let mut loot_offset_row = 1;
         let loot_offset_col = 54;
         let display_row_count = 5;
@@ -125,7 +123,7 @@ impl Window {
         let start_index = display_row_count * (backpack_index / display_row_count);
 
         //Fill items vector with items to display.
-        for index in start_index .. start_index + display_row_count {
+        for index in start_index..start_index + display_row_count {
             if !backpack.empty_slot(index) {
                 items.push(&backpack.items[index]);
             }
@@ -165,9 +163,9 @@ impl Window {
         clear();
 
         //Draw Map.
-        let mut row_index : usize = 0;
+        let mut row_index: usize = 0;
         for row in &level.level {
-            let mut col_index : usize = 0;
+            let mut col_index: usize = 0;
 
             for col in row {
                 mv(row_index as i32, col_index as i32);
@@ -191,6 +189,19 @@ impl Window {
         for enemy in enemies {
             mv(enemy.entity.pos_row, enemy.entity.pos_col);
             addch(resolve_enemy(enemy));
+        }
+
+        //Draw Enemies with loot.
+        let mut lootable_enemies_iter = enemies.iter().filter(|x| x.entity.is_death() && x.entity.backpack.size() > 0);
+
+        loop {
+            match lootable_enemies_iter.next() {
+                Some(enemy) => {
+                    mv(enemy.entity.pos_row, enemy.entity.pos_col);
+                    addch(resolve_enemy(enemy));
+                },
+                None => { break; }
+            }
         }
 
         //Draw Player.
@@ -219,39 +230,39 @@ impl Window {
         }
 
         //Draw Player Health and Name.
-        mvaddch(0,0, '[' as u32);
+        mvaddch(0, 0, '[' as u32);
         let health = ((player.current_life as f32 / player.calculate_max_life() as f32) * 100.0f32) as u32;
         if health >= 10 {
-            mvaddch(0,1, '#' as u32);
+            mvaddch(0, 1, '#' as u32);
         }
         if health >= 20 {
-            mvaddch(0,2, '#' as u32);
+            mvaddch(0, 2, '#' as u32);
         }
         if health >= 30 {
-            mvaddch(0,3, '#' as u32);
+            mvaddch(0, 3, '#' as u32);
         }
         if health >= 40 {
-            mvaddch(0,4, '#' as u32);
+            mvaddch(0, 4, '#' as u32);
         }
         if health >= 50 {
-            mvaddch(0,5, '#' as u32);
+            mvaddch(0, 5, '#' as u32);
         }
         if health >= 60 {
-            mvaddch(0,6, '#' as u32);
+            mvaddch(0, 6, '#' as u32);
         }
         if health >= 70 {
-            mvaddch(0,7, '#' as u32);
+            mvaddch(0, 7, '#' as u32);
         }
         if health >= 80 {
-            mvaddch(0,8, '#' as u32);
+            mvaddch(0, 8, '#' as u32);
         }
         if health >= 90 {
-            mvaddch(0,9, '#' as u32);
+            mvaddch(0, 9, '#' as u32);
         }
         if health >= 100 {
-            mvaddch(0,10, '#' as u32);
+            mvaddch(0, 10, '#' as u32);
         }
-        mvaddch(0,11,']' as u32);
+        mvaddch(0, 11, ']' as u32);
         mvprintw(0, 13, &player.name);
     }
 
@@ -304,7 +315,7 @@ fn resolve_input(input: i32) -> Input {
     }
 }
 
-fn resolve_type(item_type : Type) -> &'static str {
+fn resolve_type(item_type: Type) -> &'static str {
     match item_type {
         Type::Head => {
             "Head"
@@ -332,7 +343,9 @@ fn resolve_item_cursor() -> u32 {
 }
 
 fn resolve_enemy(enemy: &Monster) -> u32 {
-    if enemy.entity.is_death() {
+    if enemy.entity.is_death() && enemy.entity.backpack.size() > 0 {
+        'O' as u32
+    } else if enemy.entity.is_death() {
         '_' as u32
     } else {
         '|' as u32
