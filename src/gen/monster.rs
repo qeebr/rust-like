@@ -26,31 +26,24 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     };
 
     let player_stats = player.calculate_stats();
+    let player_damage = player.weapon.get_damage();
+    let mean_damage = ((player_damage.0 + player_damage.1)/2) as f32;
 
     match diff {
         1 => {
-            monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/10, player_stats.vitality/8 + 1);
-            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.strength/10, player_stats.strength/8 + 1);
-            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.defense/10, player_stats.defense/8 + 1);
-            monster.entity.base_stats.speed = player_stats.speed;
+            calculate_monster_stats(&mut monster, player_stats, mean_damage, 0.9f32, 0.9f32, 0.2f32);
 
             monster.monster_difficulty = Difficulty::Easy;
             monster.entity.name = "(Easy) ".to_string() + &monster.entity.name;
         },
         2 => {
-            monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/6, player_stats.vitality/4 + 1);
-            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.strength/6, player_stats.strength/4 + 1);
-            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.defense/6, player_stats.defense/4 + 1);
-            monster.entity.base_stats.speed = player_stats.speed;
+            calculate_monster_stats(&mut monster, player_stats, mean_damage, 2.0f32, 1.0f32, 0.9f32);
 
             monster.monster_difficulty = Difficulty::Normal;
             monster.entity.name = "(Normal) ".to_string() + &monster.entity.name;
         },
         3 => {
-            monster.entity.base_stats.vitality = rand::thread_rng().gen_range(player_stats.vitality/3, player_stats.vitality/2 + 1);
-            monster.entity.base_stats.defense = rand::thread_rng().gen_range(player_stats.strength/3, player_stats.strength/2 + 1);
-            monster.entity.base_stats.strength = rand::thread_rng().gen_range(player_stats.defense/3, player_stats.defense/2 + 1);
-            monster.entity.base_stats.speed = player_stats.speed;
+            calculate_monster_stats(&mut monster, player_stats, mean_damage, 2.0f32, 1.2f32, 1.0f32);
 
             monster.monster_difficulty = Difficulty::Hard;
             monster.entity.name = "(Hard) ".to_string() + &monster.entity.name;
@@ -125,6 +118,13 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     }
 
     monster
+}
+
+fn calculate_monster_stats(monster: &mut Monster, player_stats : Stats, mean_damage : f32, vitality :f32, strength : f32, defense : f32) {
+    monster.entity.base_stats.vitality = (mean_damage * vitality).round() as i32;
+    monster.entity.base_stats.defense = (player_stats.strength as f32 * defense).round() as i32;
+    monster.entity.base_stats.strength = (player_stats.defense as f32 * strength).round() as i32;
+    monster.entity.base_stats.speed = player_stats.speed;
 }
 
 fn generate_item(new_item: &mut Item, current_item: &Item, monster_difficulty: &Difficulty) {

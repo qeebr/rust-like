@@ -53,6 +53,9 @@ impl Entity {
         let mut dep_stats = Stats { ..self.base_stats };
 
         add_item(&mut dep_stats, &self.head_item);
+        add_item(&mut dep_stats, &self.chest_item);
+        add_item(&mut dep_stats, &self.leg_item);
+        add_item(&mut dep_stats, &self.weapon);
 
         dep_stats
     }

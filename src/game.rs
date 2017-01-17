@@ -18,13 +18,12 @@ Was kann ich verbessern:
     * (1) Seed der Maps fest machen,
     * Alle 10 oder 20 Level/Monster ein Boss-Monster einfügen, das richtig BÄM macht -> Krasseren Loot droppt, -> den Zusatz aus Master rausnehmen und nur für diese Klasse von Items verwenden.
     * Die Stats der Items ebenfalls in KLassen einteilen, das Helme immer weniger haben wie Chests und Chests am meisten und Legs am wenigsten oder so.
-    * Genierung von Monster ist atm zu unflexibel und großartig falsch.
 
     UI
     * (1) Anzeige wievieltes Levels man atm. ist.
     * Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
     * Atm. nur ein Monster-Symbol.
-    * Zucker anzeigen ob Item besser ist.
+    * Zucker: Anzeigen ob Item besser ist.
 
     Game
     * Spezial-Attacken einfügen.

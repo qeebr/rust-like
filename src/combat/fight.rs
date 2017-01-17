@@ -18,7 +18,7 @@ impl Fight {
 
         let weapon = me.weapon.clone();
         let weapon_damage = weapon.get_damage();
-        let attack_bonus = my_dep_stats.strength - enemy_dep_stats.strength;
+        let attack_bonus = my_dep_stats.strength - enemy_dep_stats.defense;
 
         let actual_damage = generator.generate(weapon_damage.0 + attack_bonus, weapon_damage.1 + attack_bonus);
 
