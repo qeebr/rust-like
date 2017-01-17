@@ -37,7 +37,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             monster.entity.name = "(Easy) ".to_string() + &monster.entity.name;
         },
         2 => {
-            calculate_monster_stats(&mut monster, player_stats, mean_damage, 2.0f32, 1.0f32, 0.9f32);
+            calculate_monster_stats(&mut monster, player_stats, mean_damage, 1.1f32, 1.0f32, 0.9f32);
 
             monster.monster_difficulty = Difficulty::Normal;
             monster.entity.name = "(Normal) ".to_string() + &monster.entity.name;
