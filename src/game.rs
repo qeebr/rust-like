@@ -11,10 +11,9 @@ use super::log::*;
 use super::ki::*;
 
 /*
-Was kann ich verbessern:
+    Was kann ich verbessern:
 
     Generierung
-    * Drop hat atm. nur positive oder neutrale auswirkung aber keine negativen. Lesser -> [Viel Negativ; Neutral+1] Good -> [Negativ; Neutral + 2], Master -> [Neutral: Positiv]
     * (1) Seed der Maps fest machen,
     * Alle 10 oder 20 Level/Monster ein Boss-Monster einfügen, das richtig BÄM macht -> Krasseren Loot droppt, -> den Zusatz aus Master rausnehmen und nur für diese Klasse von Items verwenden.
     * Die Stats der Items ebenfalls in KLassen einteilen, das Helme immer weniger haben wie Chests und Chests am meisten und Legs am wenigsten oder so.
@@ -26,8 +25,10 @@ Was kann ich verbessern:
     * Zucker: Anzeigen ob Item besser ist.
 
     Game
+    * Game-Over anzeigen, wenn Spieler tot ist.
     * Spezial-Attacken einfügen.
     * Monster-Generierung balancieren.
+    * Das verkaufen von Items bringt Gold, Gold gegen Healing-Potions eintauschen.
 */
 
 pub struct Game {

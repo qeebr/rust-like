@@ -5,6 +5,7 @@ use super::super::character::entity::*;
 use super::super::character::monster::*;
 use super::super::character::item::*;
 use super::super::character::stats::*;
+use super::item::*;
 
 pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     let mut monster = Monster::new(MonsterType::Zombie, Difficulty::Easy, Entity::new());
@@ -55,10 +56,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let weapon_drop = rand::thread_rng().gen_range(0, 101);
     if weapon_drop <= 10 {
-        let item_name = generate_random_weapon_name(Type::Weapon, &monster.monster_difficulty);
-        let mut new_item = Item { name: item_name, item_type: Type::Weapon, modifications: Vec::new() };
-
-        generate_item(&mut new_item, &player.weapon, &monster.monster_difficulty);
+        let new_item = generate_item(Type::Weapon, &player.weapon, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
@@ -67,10 +65,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let head_drop = rand::thread_rng().gen_range(0, 101);
     if head_drop <= 10 {
-        let item_name = generate_random_weapon_name(Type::Head, &monster.monster_difficulty);
-        let mut new_item = Item { name: item_name, item_type: Type::Head, modifications: Vec::new() };
-
-        generate_item(&mut new_item, &player.head_item, &monster.monster_difficulty);
+        let new_item = generate_item(Type::Head, &player.head_item, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
@@ -79,10 +74,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let chest_drop = rand::thread_rng().gen_range(0, 101);
     if chest_drop <= 10 {
-        let item_name = generate_random_weapon_name(Type::Chest, &monster.monster_difficulty);
-        let mut new_item = Item { name: item_name, item_type: Type::Chest, modifications: Vec::new() };
-
-        generate_item(&mut new_item, &player.chest_item, &monster.monster_difficulty);
+        let new_item = generate_item(Type::Chest, &player.chest_item, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
@@ -91,10 +83,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
     let legs_drop = rand::thread_rng().gen_range(0, 101);
     if legs_drop <= 10 {
-        let item_name = generate_random_weapon_name(Type::Legs, &monster.monster_difficulty);
-        let mut new_item = Item { name: item_name, item_type: Type::Legs, modifications: Vec::new() };
-
-        generate_item(&mut new_item, &player.leg_item, &monster.monster_difficulty);
+        let new_item = generate_item(Type::Legs, &player.leg_item, &monster.monster_difficulty);
 
         match monster.entity.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
@@ -125,114 +114,4 @@ fn calculate_monster_stats(monster: &mut Monster, player_stats : Stats, mean_dam
     monster.entity.base_stats.defense = (player_stats.strength as f32 * defense).round() as i32;
     monster.entity.base_stats.strength = (player_stats.defense as f32 * strength).round() as i32;
     monster.entity.base_stats.speed = player_stats.speed;
-}
-
-fn generate_item(new_item: &mut Item, current_item: &Item, monster_difficulty: &Difficulty) {
-    let difficulty_bonus = match monster_difficulty {
-        &Difficulty::Easy => { 2 },
-        &Difficulty::Normal => { 4 },
-        &Difficulty::Hard => { 8 },
-    };
-    let mut first_value_range = match current_item.item_type {
-        Type::Nothing => {
-            6 + difficulty_bonus
-        }
-        _ => {
-            let mut sum = 0;
-
-            for stat_mod in &current_item.modifications {
-                match stat_mod {
-                    &StatsMod::Add(value) => {
-                        match value {
-                            Stat::Vitality(val) => {
-                                sum += val;
-                            },
-                            Stat::Defense(val) => {
-                                sum += val;
-                            },
-                            Stat::Strength(val) => {
-                                sum += val;
-                            },
-                            _ => {},
-                        }
-                    },
-                    _ => {},
-                }
-            }
-
-            sum + difficulty_bonus
-        }
-    };
-
-    let value = rand::thread_rng().gen_range(0, first_value_range);
-
-    if value > 0 {
-        first_value_range -= value;
-
-        new_item.modifications.push(StatsMod::Add(Stat::Strength(value)));
-    }
-
-    if first_value_range > 1 {
-        let value = rand::thread_rng().gen_range(0, first_value_range);
-
-        if value > 0 {
-            first_value_range -= value;
-
-            new_item.modifications.push(StatsMod::Add(Stat::Vitality(value)));
-        }
-    }
-
-    if first_value_range > 1 {
-        let value = rand::thread_rng().gen_range(0, first_value_range);
-
-        if value > 0 {
-            new_item.modifications.push(StatsMod::Add(Stat::Defense(value)));
-        }
-    }
-
-    //SPECIAL-CASE WHEN WEAPON!
-    if current_item.item_type == Type::Weapon ||
-        (current_item.item_type == Type::Nothing && new_item.item_type == Type::Weapon) {
-        let min_max_damage = current_item.get_damage();
-
-        let mut rnd_min = rand::thread_rng().gen_range(min_max_damage.0, min_max_damage.0 + difficulty_bonus);
-        let mut rnd_max = rand::thread_rng().gen_range(min_max_damage.1, min_max_damage.1 + difficulty_bonus);
-
-        //Just make sure that min is <= than max.
-        if rnd_min == rnd_max {
-            rnd_max += 1;
-        }
-        if rnd_min > rnd_max {
-            let tmp = rnd_min;
-            rnd_min = rnd_max;
-            rnd_max = tmp;
-        }
-
-        //Damage.
-        new_item.modifications.push(StatsMod::Damage {
-            min: rnd_min,
-            max: rnd_max,
-        });
-
-        //Speed
-        new_item.modifications.push(StatsMod::AttackSpeed(1));
-    }
-}
-
-fn generate_random_weapon_name(item_type: Type, difficulty: &Difficulty) -> String {
-    let quality = match difficulty {
-        &Difficulty::Easy => "Lesser",
-        &Difficulty::Normal => "Good",
-        &Difficulty::Hard => "Master",
-    }.to_string();
-
-    let part = match item_type {
-        Type::Head => "Helm",
-        Type::Chest => "Armor",
-        Type::Legs => "Trousers",
-        Type::Weapon => "Sword",
-        Type::Nothing | Type::Potion => "Blackhole",
-    }.to_string();
-
-    return format!("{} {}", quality, part);
 }
