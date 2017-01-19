@@ -21,11 +21,9 @@ use super::ki::*;
     UI
     * (1) Anzeige wievieltes Levels man atm. ist.
     * Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
-    * Atm. nur ein Monster-Symbol.
     * Zucker: Anzeigen ob Item besser ist.
 
     Game
-    * Game-Over anzeigen, wenn Spieler tot ist.
     * Spezial-Attacken einfügen.
     * Monster-Generierung balancieren.
     * Das verkaufen von Items bringt Gold, Gold gegen Healing-Potions eintauschen.
@@ -166,8 +164,23 @@ impl Game {
         }
     }
 
-    fn handle_game_over_state(&self, input: Input) -> Action {
+    fn handle_game_over_state(&mut self, input: Input) -> Action {
         match input {
+            Input::Use => {
+                let player_name = self.player.name.clone();
+
+                self.player = Entity::new();
+                self.player.name = player_name;
+
+                self.enemies.clear();
+                self.map = generate_level();
+                self.set_player_and_monsters();
+
+                Action::Game
+            }
+            Input::Quit => {
+                Action::Quit
+            }
             _ => { Action::GameOver }
         }
     }

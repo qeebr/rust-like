@@ -47,10 +47,12 @@ impl Window {
         mvprintw(character_offset_row + 4, character_offset_col, "----------------");
 
         let stats = player.calculate_stats();
+        let damage = player.weapon.get_damage();
         mvprintw(character_offset_row + 5, character_offset_col, &format!(" Vitality: {}", stats.vitality));
         mvprintw(character_offset_row + 6, character_offset_col, &format!(" Strength: {}", stats.strength));
         mvprintw(character_offset_row + 7, character_offset_col, &format!(" Defense:  {}", stats.defense));
         mvprintw(character_offset_row + 8, character_offset_col, &format!(" Speed:    {}", stats.speed));
+        mvprintw(character_offset_row + 9, character_offset_col, &format!(" Damage:   {}-{}", damage.0, damage.1));
 
         if active {
             match character_pointer {
@@ -209,6 +211,14 @@ impl Window {
             }
         }
 
+        //Draw alive enemies, avoid that lootable enemy is over alive enemy.
+        for enemy in enemies {
+            if !enemy.entity.is_death() {
+                mv(enemy.entity.pos_row, enemy.entity.pos_col);
+                addch(resolve_enemy(enemy));
+            }
+        }
+
         //Draw Player.
         mv(player.pos_row, player.pos_col);
         addch(resolve_player(player));
@@ -353,7 +363,47 @@ fn resolve_enemy(enemy: &Monster) -> u32 {
     } else if enemy.entity.is_death() {
         '_' as u32
     } else {
-        '|' as u32
+        match enemy.monster_type {
+            MonsterType::Zombie => {
+                match enemy.monster_difficulty {
+                    Difficulty::Easy => {
+                        't' as u32
+                    },
+                    Difficulty::Normal => {
+                        'f' as u32
+                    },
+                    Difficulty::Hard => {
+                        'F' as u32
+                    },
+                }
+            },
+            MonsterType::Crab => {
+                match enemy.monster_difficulty {
+                    Difficulty::Easy => {
+                        'n' as u32
+                    },
+                    Difficulty::Normal => {
+                        'm' as u32
+                    },
+                    Difficulty::Hard => {
+                        'M' as u32
+                    },
+                }
+            },
+            MonsterType::Goblin => {
+                match enemy.monster_difficulty {
+                    Difficulty::Easy => {
+                        'y' as u32
+                    },
+                    Difficulty::Normal => {
+                        'x' as u32
+                    },
+                    Difficulty::Hard => {
+                        'X' as u32
+                    },
+                }
+            }
+        }
     }
 }
 
