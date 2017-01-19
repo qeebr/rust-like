@@ -24,6 +24,11 @@ impl Window {
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     }
 
+    pub fn draw_game_over() {
+        let message = "Game Over".to_string();
+        mvprintw(12, (85 - message.len() as i32) / 2, &message);
+    }
+
     pub fn draw_menu() {
         let message = "Press Q to Return to Game".to_string();
         mvprintw(12, (85 - message.len() as i32) / 2, &message);
@@ -206,7 +211,7 @@ impl Window {
 
         //Draw Player.
         mv(player.pos_row, player.pos_col);
-        addch(resolve_player());
+        addch(resolve_player(player));
 
         //Draw Effects.
         for effect in effect_list {
@@ -356,8 +361,12 @@ fn resolve_effect() -> u32 {
     '-' as u32
 }
 
-fn resolve_player() -> u32 {
-    '@' as u32
+fn resolve_player(player: &Entity) -> u32 {
+    if player.is_death() {
+        '_' as u32
+    } else {
+        '@' as u32
+    }
 }
 
 fn resolve_tile(tile: &Tile) -> u32 {

@@ -48,8 +48,7 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Game {
-
-        Game{
+        Game {
             log: Log::new(),
             map: Level::new(),
             player: Entity::new(),
@@ -58,10 +57,10 @@ impl Game {
             effect_list: Vec::new(),
 
             game_state: Action::Game,
-            backpack_index:0,
+            backpack_index: 0,
             inventory_pointer: InventoryPointer::Backpack,
             character_pointer: Type::Head,
-            enemy_loot_index:0
+            enemy_loot_index: 0
         }
     }
 
@@ -84,6 +83,9 @@ impl Game {
             let next_game_state = match self.game_state {
                 Action::Game => {
                     self.handle_game_state(input)
+                },
+                Action::GameOver => {
+                    self.handle_game_over_state(input)
                 },
                 Action::Loot => {
                     self.handle_loot_state(input)
@@ -126,6 +128,8 @@ impl Game {
                 Window::draw_entity(&self.player, self.character_pointer, self.inventory_pointer == InventoryPointer::Character);
             } else if self.game_state == Action::Menu {
                 Window::draw_menu();
+            } else if self.game_state == Action::GameOver {
+                Window::draw_game_over();
             }
         }
     }
@@ -159,6 +163,12 @@ impl Game {
             }
 
             row_index += 1;
+        }
+    }
+
+    fn handle_game_over_state(&self, input: Input) -> Action {
+        match input {
+            _ => { Action::GameOver }
         }
     }
 
@@ -315,6 +325,10 @@ impl Game {
     fn handle_game_state(&mut self, input: Input) -> Action {
         self.effect_list.clear();
 
+        if self.player.is_death() {
+            return Action::GameOver;
+        }
+
         match input {
             Input::MoveUp | Input::MoveDown | Input::MoveLeft | Input::MoveRight => {
                 self.handle_move(input);
@@ -411,7 +425,6 @@ impl Game {
         self.player.pos_row = row_diff as i32;
         self.player.pos_col = col_diff as i32;
     }
-
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -423,6 +436,7 @@ enum InventoryPointer {
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum Action {
     Game,
+    GameOver,
     Loot,
     Inventory,
     NextLevel,

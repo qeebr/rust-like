@@ -74,8 +74,8 @@ fn calculate_weapon_attributes(new_item : &mut Item, current_item : &Item, monst
 
     let min_max_damage = current_item.get_damage();
 
-    let mut rnd_min = rand::thread_rng().gen_range(min_max_damage.0 + min_difficulty_bonus, min_max_damage.0 + min_difficulty_bonus);
-    let mut rnd_max = rand::thread_rng().gen_range(min_max_damage.1 + max_difficulty_bonus, min_max_damage.1 + max_difficulty_bonus);
+    let mut rnd_min = rand::thread_rng().gen_range(min_max_damage.0 + min_difficulty_bonus, min_max_damage.0 + max_difficulty_bonus);
+    let mut rnd_max = rand::thread_rng().gen_range(min_max_damage.1 + min_difficulty_bonus, min_max_damage.1 + max_difficulty_bonus);
 
     //Just make sure that min is <= than max.
     if rnd_min == rnd_max {
