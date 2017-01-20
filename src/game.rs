@@ -216,8 +216,8 @@ impl Game {
 
                         if new_item.item_type == Type::Potion {
                             let max_life = self.player.calculate_max_life();
-                            let heal_percentage = new_item.get_heal_percentage();
-                            let actual_heal = max_life / heal_percentage;
+                            let heal_percentage = new_item.get_heal_percentage() as f32;
+                            let actual_heal = ((max_life  as f32) * (heal_percentage/100.0f32)).round() as i32;
 
                             self.player.current_life = self.player.current_life + actual_heal;
                             if self.player.current_life > max_life {

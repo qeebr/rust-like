@@ -14,6 +14,9 @@ pub struct Window;
 
 impl Window {
     pub fn init() {
+        let locale_conf = LcCategory::all;
+        setlocale(locale_conf, "UTF-8");
+
         initscr();
         raw();//cbreak();
         halfdelay(5);
@@ -367,39 +370,39 @@ fn resolve_enemy(enemy: &Monster) -> u32 {
             MonsterType::Zombie => {
                 match enemy.monster_difficulty {
                     Difficulty::Easy => {
-                        't' as u32
-                    },
-                    Difficulty::Normal => {
                         'f' as u32
                     },
-                    Difficulty::Hard => {
+                    Difficulty::Normal => {
                         'F' as u32
+                    },
+                    Difficulty::Hard => {
+                        'Ḟ' as u32
                     },
                 }
             },
             MonsterType::Crab => {
                 match enemy.monster_difficulty {
                     Difficulty::Easy => {
-                        'n' as u32
+                        'm' as u32
                     },
                     Difficulty::Normal => {
                         'm' as u32
                     },
                     Difficulty::Hard => {
-                        'M' as u32
+                        'Ṁ' as u32
                     },
                 }
             },
             MonsterType::Goblin => {
                 match enemy.monster_difficulty {
                     Difficulty::Easy => {
-                        'y' as u32
-                    },
-                    Difficulty::Normal => {
                         'x' as u32
                     },
-                    Difficulty::Hard => {
+                    Difficulty::Normal => {
                         'X' as u32
+                    },
+                    Difficulty::Hard => {
+                        'Ẋ' as u32
                     },
                 }
             }
@@ -424,8 +427,8 @@ fn resolve_tile(tile: &Tile) -> u32 {
         &Tile::Floor => '.' as u32,
         &Tile::Wall => '#' as u32,
         &Tile::Nothing => ' ' as u32,
-        &Tile::PlSpawn => '<' as u32,
+        &Tile::PlSpawn => '⋀' as u32,
         &Tile::MnSpawn { .. } => '?' as u32,
-        &Tile::Next => '>' as u32,
+        &Tile::Next => '⋁' as u32,
     }
 }
