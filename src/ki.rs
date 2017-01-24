@@ -79,7 +79,7 @@ pub fn handle_ki(log: &mut Log, map: &Level, player: &mut Entity, enemies: &mut 
             }
 
             //Collision with Wall uncool.
-            if map.level[row_diff as usize][col_diff as usize] == Tile::Wall {
+            if map.map[row_diff as usize][col_diff as usize] == Tile::Wall {
                 continue;
             }
 

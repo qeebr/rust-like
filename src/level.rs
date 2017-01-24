@@ -1,7 +1,9 @@
 pub struct Level {
-    pub level: Vec<Vec<Tile>>,
+    pub map: Vec<Vec<Tile>>,
 
     pub meta: Vec<Vec<Tile>>,
+
+    pub level: i32,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -10,7 +12,10 @@ pub enum Tile {
     Floor,
     Wall,
     PlSpawn,
-    MnSpawn { mn_type : u32, difficulty : u32 },
+    MnSpawn {
+        mn_type: u32,
+        difficulty: u32
+    },
     Next,
 }
 
@@ -50,13 +55,13 @@ impl Level {
         meta.push(row);
         let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing];
         meta.push(row);
-        let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::MnSpawn{mn_type:1,difficulty:1}, Tile::Nothing, Tile::Nothing];
+        let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::MnSpawn { mn_type: 1, difficulty: 1 }, Tile::Nothing, Tile::Nothing];
         meta.push(row);
         let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing];
         meta.push(row);
         let row = vec![Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing, Tile::Nothing];
         meta.push(row);
 
-        Level { level: rows, meta: meta }
+        Level { map: rows, meta: meta, level: 0 }
     }
 }

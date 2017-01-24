@@ -14,12 +14,10 @@ use super::ki::*;
     Was kann ich verbessern:
 
     Generierung
-    * (1) Seed der Maps fest machen,
     * Alle 10 oder 20 Level/Monster ein Boss-Monster einfügen, das richtig BÄM macht -> Krasseren Loot droppt, -> den Zusatz aus Master rausnehmen und nur für diese Klasse von Items verwenden.
     * Die Stats der Items ebenfalls in KLassen einteilen, das Helme immer weniger haben wie Chests und Chests am meisten und Legs am wenigsten oder so.
 
     UI
-    * (1) Anzeige wievieltes Levels man atm. ist.
     * Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
     * Zucker: Anzeigen ob Item besser ist.
 
@@ -42,6 +40,8 @@ pub struct Game {
     inventory_pointer: InventoryPointer,
     character_pointer: Type,
     enemy_loot_index: usize,
+
+    level_generator: LevelGenerator,
 }
 
 impl Game {
@@ -58,14 +58,16 @@ impl Game {
             backpack_index: 0,
             inventory_pointer: InventoryPointer::Backpack,
             character_pointer: Type::Head,
-            enemy_loot_index: 0
+            enemy_loot_index: 0,
+
+            level_generator: LevelGenerator::new(),
         }
     }
 
     pub fn init(&mut self) {
         self.player.name = "qriz".to_string();
 
-        self.map = generate_level();
+        self.map = self.level_generator.generate_level(0);
 
         self.set_player_and_monsters();
 
@@ -87,22 +89,22 @@ impl Game {
                 },
                 Action::Loot => {
                     self.handle_loot_state(input)
-                }
+                },
                 Action::Inventory => {
                     self.handle_inventory_state(input)
-                }
+                },
                 Action::NextLevel => {
                     self.enemies.clear();
-                    self.map = generate_level();
+                    self.map = self.level_generator.generate_level(self.map.level + 1);
                     self.set_player_and_monsters();
                     Action::Game
-                }
+                },
                 Action::Menu => {
                     self.handle_menu_state(input)
-                }
+                },
                 Action::Quit => {
                     break;
-                }
+                },
             };
 
             if self.game_state == Action::Game && next_game_state == Action::Loot {
@@ -173,7 +175,7 @@ impl Game {
                 self.player.name = player_name;
 
                 self.enemies.clear();
-                self.map = generate_level();
+                self.map = self.level_generator.generate_level(0);
                 self.set_player_and_monsters();
 
                 Action::Game
@@ -217,7 +219,7 @@ impl Game {
                         if new_item.item_type == Type::Potion {
                             let max_life = self.player.calculate_max_life();
                             let heal_percentage = new_item.get_heal_percentage() as f32;
-                            let actual_heal = ((max_life  as f32) * (heal_percentage/100.0f32)).round() as i32;
+                            let actual_heal = ((max_life as f32) * (heal_percentage / 100.0f32)).round() as i32;
 
                             self.player.current_life = self.player.current_life + actual_heal;
                             if self.player.current_life > max_life {
@@ -372,7 +374,11 @@ impl Game {
                     _ => {
                         if self.map.meta[self.player.pos_row as usize][self.player.pos_col as usize] == Tile::Next {
                             return Action::NextLevel;
+                        } else if self.map.meta[self.player.pos_row as usize][self.player.pos_col as usize] == Tile::PlSpawn {
+                            self.log.add_message("There is no way up.".to_string());
+                            return Action::Game;
                         }
+
                         return Action::Inventory;
                     },
                 }
@@ -424,7 +430,7 @@ impl Game {
         }
 
         //Collision with Wall uncool.
-        if self.map.level[row_diff as usize][col_diff as usize] == Tile::Wall {
+        if self.map.map[row_diff as usize][col_diff as usize] == Tile::Wall {
             return;
         }
 

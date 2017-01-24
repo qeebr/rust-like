@@ -174,7 +174,7 @@ impl Window {
 
         //Draw Map.
         let mut row_index: usize = 0;
-        for row in &level.level {
+        for row in &level.map {
             let mut col_index: usize = 0;
 
             for col in row {
@@ -229,7 +229,7 @@ impl Window {
         //Draw Effects.
         for effect in effect_list {
             for &(row, col) in &effect.area {
-                if &level.level[row as usize][col as usize] != &Tile::Wall {
+                if &level.map[row as usize][col as usize] != &Tile::Wall {
                     mv(row, col);
                     addch(resolve_effect());
                 }
@@ -282,6 +282,10 @@ impl Window {
         }
         mvaddch(0, 11, ']' as u32);
         mvprintw(0, 13, &player.name);
+
+        let x = getmaxx(stdscr());
+        let dungeon = format!("{} Dungeon", level.level);
+        mvaddstr(0, x - dungeon.len() as i32 , &dungeon);
     }
 
     pub fn get_input() -> Input {
