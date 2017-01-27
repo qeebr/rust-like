@@ -3,11 +3,9 @@ extern crate ncurses;
 use ncurses::*;
 use super::level::*;
 use super::character::entity::*;
-use super::character::monster::*;
 use super::character::backpack::*;
 use super::character::item::*;
 use super::character::stats::*;
-use super::combat::effect::*;
 use super::log::*;
 
 pub struct Window;
@@ -169,7 +167,7 @@ impl Window {
         }
     }
 
-    pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Monster>, effect_list: &Vec<WeaponAttack>) {
+    pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Entity>) {
         clear();
 
         //Draw Map.
@@ -197,17 +195,17 @@ impl Window {
 
         //Draw Enemies.
         for enemy in enemies {
-            mv(enemy.entity.pos_row, enemy.entity.pos_col);
+            mv(enemy.pos_row, enemy.pos_col);
             addch(resolve_enemy(enemy));
         }
 
         //Draw Enemies with loot.
-        let mut lootable_enemies_iter = enemies.iter().filter(|x| x.entity.is_death() && x.entity.backpack.size() > 0);
+        let mut lootable_enemies_iter = enemies.iter().filter(|x| x.is_death() && x.backpack.size() > 0);
 
         loop {
             match lootable_enemies_iter.next() {
                 Some(enemy) => {
-                    mv(enemy.entity.pos_row, enemy.entity.pos_col);
+                    mv(enemy.pos_row, enemy.pos_col);
                     addch(resolve_enemy(enemy));
                 },
                 None => { break; }
@@ -216,8 +214,8 @@ impl Window {
 
         //Draw alive enemies, avoid that lootable enemy is over alive enemy.
         for enemy in enemies {
-            if !enemy.entity.is_death() {
-                mv(enemy.entity.pos_row, enemy.entity.pos_col);
+            if !enemy.is_death() {
+                mv(enemy.pos_row, enemy.pos_col);
                 addch(resolve_enemy(enemy));
             }
         }
@@ -227,14 +225,14 @@ impl Window {
         addch(resolve_player(player));
 
         //Draw Effects.
-        for effect in effect_list {
+        /*for effect in effect_list {
             for &(row, col) in &effect.area {
                 if &level.map[row as usize][col as usize] != &Tile::Wall {
                     mv(row, col);
                     addch(resolve_effect());
                 }
             }
-        }
+        }*/
 
         //Draw latest game message.
         let msg = log.get_message();
@@ -364,13 +362,16 @@ fn resolve_item_cursor() -> u32 {
     '>' as u32
 }
 
-fn resolve_enemy(enemy: &Monster) -> u32 {
-    if enemy.entity.is_death() && enemy.entity.backpack.size() > 0 {
+fn resolve_enemy(enemy: &Entity) -> u32 {
+    if enemy.is_death() && enemy.backpack.size() > 0 {
         'O' as u32
-    } else if enemy.entity.is_death() {
+    } else if enemy.is_death() {
         '_' as u32
     } else {
         match enemy.monster_type {
+            MonsterType::Unknown => {
+                '?' as u32
+            },
             MonsterType::Zombie => {
                 match enemy.monster_difficulty {
                     Difficulty::Easy => {
@@ -414,9 +415,9 @@ fn resolve_enemy(enemy: &Monster) -> u32 {
     }
 }
 
-fn resolve_effect() -> u32 {
+/*fn resolve_effect() -> u32 {
     '-' as u32
-}
+}*/
 
 fn resolve_player(player: &Entity) -> u32 {
     if player.is_death() {

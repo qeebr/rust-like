@@ -3,6 +3,7 @@ use super::item::*;
 use super::backpack::*;
 
 pub struct Entity {
+    pub id: u32,
     pub name: String,
     pub base_stats: Stats,
 
@@ -16,13 +17,31 @@ pub struct Entity {
     pub pos_row: i32,
     pub pos_col: i32,
     pub current_life: i32,
+
+    pub monster_type: MonsterType,
+    pub monster_difficulty: Difficulty,
+}
+
+pub enum MonsterType {
+    Unknown,
+    Crab,
+    Zombie,
+    Goblin,
+}
+
+#[derive(PartialEq)]
+pub enum Difficulty {
+    Easy,
+    Normal,
+    Hard,
 }
 
 impl Entity {
-    pub fn new() -> Entity {
+    pub fn new(id: u32) -> Entity {
         let base_stats = Stats { vitality: 20, strength: 10, speed: 5, defense: 10 };
 
         let mut entity = Entity {
+            id: id,
             //No-Name.
             name: "Unknown".to_string(),
 
@@ -39,7 +58,10 @@ impl Entity {
             current_life: 0,
 
             // Backpack.
-            backpack: Backpack::new()
+            backpack: Backpack::new(),
+
+            monster_type : MonsterType::Unknown,
+            monster_difficulty : Difficulty::Easy,
         };
 
         //Set correct life.

@@ -2,25 +2,22 @@ extern crate rand;
 
 use rand::Rng;
 use super::super::character::entity::*;
-use super::super::character::monster::*;
 use super::super::character::item::*;
 use super::super::character::stats::*;
 use super::item::*;
 
-pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
-    let mut monster = Monster::new(MonsterType::Zombie, Difficulty::Easy, Entity::new());
-
+pub fn create_monster(player: &Entity, mut monster: &mut Entity, mn_type: u32, diff: u32) {
     match mn_type {
         1 => {
-            monster.entity.name = "Zombie".to_string();
+            monster.name = "Zombie".to_string();
             monster.monster_type = MonsterType::Zombie;
         },
         2 => {
-            monster.entity.name = "Crab".to_string();
+            monster.name = "Crab".to_string();
             monster.monster_type = MonsterType::Crab;
         },
         3 => {
-            monster.entity.name = "Goblin".to_string();
+            monster.name = "Goblin".to_string();
             monster.monster_type = MonsterType::Goblin;
         },
         _ => panic!("unknown monster_type."),
@@ -35,30 +32,30 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
             calculate_monster_stats(&mut monster, player_stats, mean_damage, 0.9f32, 0.9f32, 0.2f32);
 
             monster.monster_difficulty = Difficulty::Easy;
-            monster.entity.name = "(Easy) ".to_string() + &monster.entity.name;
+            monster.name = "(Easy) ".to_string() + &monster.name;
         },
         2 => {
             calculate_monster_stats(&mut monster, player_stats, mean_damage, 1.1f32, 1.0f32, 0.9f32);
 
             monster.monster_difficulty = Difficulty::Normal;
-            monster.entity.name = "(Normal) ".to_string() + &monster.entity.name;
+            monster.name = "(Normal) ".to_string() + &monster.name;
         },
         3 => {
             calculate_monster_stats(&mut monster, player_stats, mean_damage, 2.0f32, 1.2f32, 1.0f32);
 
             monster.monster_difficulty = Difficulty::Hard;
-            monster.entity.name = "(Hard) ".to_string() + &monster.entity.name;
+            monster.name = "(Hard) ".to_string() + &monster.name;
         },
         _ => panic!("unknown difficulty."),
     }
 
-    monster.entity.current_life = monster.entity.calculate_max_life();
+    monster.current_life = monster.calculate_max_life();
 
     let weapon_drop = rand::thread_rng().gen_range(0, 101);
     if weapon_drop <= 10 {
         let new_item = generate_item(Type::Weapon, &player.weapon, &monster.monster_difficulty);
 
-        match monster.entity.backpack.add_item(new_item) {
+        match monster.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
         }
     }
@@ -67,7 +64,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     if head_drop <= 10 {
         let new_item = generate_item(Type::Head, &player.head_item, &monster.monster_difficulty);
 
-        match monster.entity.backpack.add_item(new_item) {
+        match monster.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
         }
     }
@@ -76,7 +73,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     if chest_drop <= 10 {
         let new_item = generate_item(Type::Chest, &player.chest_item, &monster.monster_difficulty);
 
-        match monster.entity.backpack.add_item(new_item) {
+        match monster.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
         }
     }
@@ -85,7 +82,7 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
     if legs_drop <= 10 {
         let new_item = generate_item(Type::Legs, &player.leg_item, &monster.monster_difficulty);
 
-        match monster.entity.backpack.add_item(new_item) {
+        match monster.backpack.add_item(new_item) {
             _ => { /*I don't care.*/ },
         }
     }
@@ -101,17 +98,15 @@ pub fn create_monster(player: &Entity, mn_type: u32, diff: u32) -> Monster {
 
         potion.modifications.push(StatsMod::Heal(healing_percentage));
 
-        match monster.entity.backpack.add_item(potion) {
+        match monster.backpack.add_item(potion) {
             _ => { /*I don't care.*/ }
         }
     }
-
-    monster
 }
 
-fn calculate_monster_stats(monster: &mut Monster, player_stats : Stats, mean_damage : f32, vitality :f32, strength : f32, defense : f32) {
-    monster.entity.base_stats.vitality = (mean_damage * vitality).round() as i32;
-    monster.entity.base_stats.defense = (player_stats.strength as f32 * defense).round() as i32;
-    monster.entity.base_stats.strength = (player_stats.defense as f32 * strength).round() as i32;
-    monster.entity.base_stats.speed = player_stats.speed;
+fn calculate_monster_stats(monster: &mut Entity, player_stats : Stats, mean_damage : f32, vitality :f32, strength : f32, defense : f32) {
+    monster.base_stats.vitality = (mean_damage * vitality).round() as i32;
+    monster.base_stats.defense = (player_stats.strength as f32 * defense).round() as i32;
+    monster.base_stats.strength = (player_stats.defense as f32 * strength).round() as i32;
+    monster.base_stats.speed = player_stats.speed;
 }

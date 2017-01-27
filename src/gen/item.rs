@@ -3,7 +3,7 @@ extern crate rand;
 use rand::Rng;
 use super::super::character::item::*;
 use super::super::character::stats::*;
-use super::super::character::monster::*;
+use super::super::character::entity::*;
 
 pub fn generate_item(target_type: Type, player_item: &Item, monster_difficulty: &Difficulty) -> Item {
     let mut item = Item { item_type: target_type, name: generate_random_weapon_name(&target_type, &monster_difficulty), modifications: Vec::new() };

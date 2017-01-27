@@ -9,6 +9,7 @@ pub mod log;
 pub mod game;
 pub mod gen;
 pub mod ki;
+pub mod effect;
 
 fn main() {
     let mut game = game::Game::new();

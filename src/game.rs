@@ -1,12 +1,10 @@
 use super::character::entity::*;
-use super::character::monster::*;
 use super::character::item::*;
 use super::level::*;
 use super::gen::level::*;
 use super::gen::monster::*;
 use super::ui::*;
-use super::combat::effect::*;
-use super::combat::fight::*;
+use super::effect::{AttackDirection, WeaponHit, Storm, Effect};
 use super::log::*;
 use super::ki::*;
 
@@ -32,8 +30,9 @@ pub struct Game {
     map: Level,
     player: Entity,
 
-    enemies: Vec<Monster>,
-    effect_list: Vec<WeaponAttack>,
+    entity_count: u32,
+    enemies: Vec<Entity>,
+    effects: Vec<Box<Effect>>,
 
     game_state: Action,
     backpack_index: usize,
@@ -49,10 +48,11 @@ impl Game {
         Game {
             log: Log::new(),
             map: Level::new(),
-            player: Entity::new(),
+            player: Entity::new(0),
 
+            entity_count: 1,
             enemies: Vec::new(),
-            effect_list: Vec::new(),
+            effects: Vec::new(),
 
             game_state: Action::Game,
             backpack_index: 0,
@@ -75,7 +75,7 @@ impl Game {
     }
 
     pub fn run(&mut self) {
-        Window::draw(&mut self.log, &self.map, &self.player, &self.enemies, &self.effect_list);
+        Window::draw(&mut self.log, &self.map, &self.player, &self.enemies);
 
         loop {
             let input = Window::get_input();
@@ -117,12 +117,12 @@ impl Game {
                 self.game_state = next_game_state;
             }
 
-            Window::draw(&mut self.log, &self.map, &self.player, &self.enemies, &self.effect_list);
+            Window::draw(&mut self.log, &self.map, &self.player, &self.enemies);
 
             if self.game_state == Action::Loot {
                 let enemy = &self.enemies[self.enemy_loot_index];
 
-                Window::draw_loot(&enemy.entity.backpack, self.backpack_index, true, &enemy.entity.name)
+                Window::draw_loot(&enemy.backpack, self.backpack_index, true, &enemy.name)
             } else if self.game_state == Action::Inventory {
                 Window::draw_loot(&self.player.backpack, self.backpack_index, self.inventory_pointer == InventoryPointer::Backpack, &"".to_string());
                 Window::draw_entity(&self.player, self.character_pointer, self.inventory_pointer == InventoryPointer::Character);
@@ -149,10 +149,13 @@ impl Game {
                         self.player.pos_col = col_index;
                     },
                     &Tile::MnSpawn { mn_type, difficulty } => {
-                        let mut monster = create_monster(&self.player, mn_type, difficulty);
+                        let mut monster = Entity::new(self.entity_count);
+                        self.entity_count += 1;
 
-                        monster.entity.pos_row = row_index;
-                        monster.entity.pos_col = col_index;
+                        create_monster(&self.player, &mut monster, mn_type, difficulty);
+
+                        monster.pos_row = row_index;
+                        monster.pos_col = col_index;
 
                         self.enemies.push(monster);
                     },
@@ -171,7 +174,7 @@ impl Game {
             Input::Use => {
                 let player_name = self.player.name.clone();
 
-                self.player = Entity::new();
+                self.player = Entity::new(0);
                 self.player.name = player_name;
 
                 self.enemies.clear();
@@ -309,17 +312,17 @@ impl Game {
                 }
             },
             Input::MoveDown => {
-                if !self.enemies[self.enemy_loot_index].entity.backpack.empty_slot(self.backpack_index + 1) {
+                if !self.enemies[self.enemy_loot_index].backpack.empty_slot(self.backpack_index + 1) {
                     self.backpack_index += 1;
                 }
             },
 
             Input::Use => {
                 if self.player.backpack.has_space() {
-                    let item = self.enemies[self.enemy_loot_index].entity.backpack.items[self.backpack_index].clone();
+                    let item = self.enemies[self.enemy_loot_index].backpack.items[self.backpack_index].clone();
                     self.log.add_message(format!("Item {} added to Backpack", item.name));
 
-                    self.enemies[self.enemy_loot_index].entity.backpack.remove_item(self.backpack_index);
+                    self.enemies[self.enemy_loot_index].backpack.remove_item(self.backpack_index);
                     match self.player.backpack.add_item(item) {
                         Result::Err(..) => { panic!("Error") },
                         _ => {},
@@ -338,8 +341,6 @@ impl Game {
     }
 
     fn handle_game_state(&mut self, input: Input) -> Action {
-        self.effect_list.clear();
-
         if self.player.is_death() {
             return Action::GameOver;
         }
@@ -354,11 +355,11 @@ impl Game {
             },
 
             Input::Use => {
-                let enemy = self.enemies.iter().find(|x| x.entity.pos_row == self.player.pos_row && x.entity.pos_col == self.player.pos_col);
+                let enemy = self.enemies.iter().find(|x| x.pos_row == self.player.pos_row && x.pos_col == self.player.pos_col);
 
                 match enemy {
                     Option::Some(..) => {
-                        let enemy_with_loot = self.enemies.iter().position(|x| x.entity.backpack.size() > 0 && x.entity.pos_row == self.player.pos_row && x.entity.pos_col == self.player.pos_col);
+                        let enemy_with_loot = self.enemies.iter().position(|x| x.backpack.size() > 0 && x.pos_row == self.player.pos_row && x.pos_col == self.player.pos_col);
 
                         match enemy_with_loot {
                             Option::Some(value) => {
@@ -389,9 +390,66 @@ impl Game {
             Input::Nothing | Input::Drop => {},
         }
 
-        handle_ki(&mut self.log, &self.map, &mut self.player, &mut self.enemies, &mut self.effect_list);
+        handle_ki(&self.map, &mut self.player, &mut self.enemies, &mut self.effects);
+
+        self.handle_player_effects();
+        self.handle_enemy_effects();
 
         Action::Game
+    }
+
+    fn handle_player_effects(&mut self) {
+        let mut player_effects : Vec<usize> = Vec::new();
+        let mut index : usize = 0;
+
+        for effect in self.effects.iter() {
+            if effect.actor_id() == self.player.id {
+                player_effects.push(index);
+            }
+
+            index += 1;
+        }
+
+        for effect_index in player_effects.iter() {
+            for enemy_index in 0..self.enemies.len() {
+                self.effects[*effect_index].execute(&mut self.log, &mut self.map, &mut self.player, &mut self.enemies[enemy_index]);
+            }
+        }
+
+        player_effects.reverse();
+        for effect_index in player_effects.iter() {
+            if self.effects[*effect_index].done(&mut self.player, &mut self.map) {
+                self.effects.remove(*effect_index);
+            }
+        }
+    }
+
+    fn handle_enemy_effects(&mut self) {
+        let mut enemy_effects : Vec<usize> = Vec::new();
+        let mut index : usize = 0;
+
+        for effect in self.effects.iter() {
+            if effect.actor_id() != self.player.id {
+                enemy_effects.push(index);
+            }
+
+            index += 1;
+        }
+
+        for effect_index in enemy_effects.iter() {
+            let enemy_index = self.enemies.iter().position(|enemy| enemy.id == self.effects[*effect_index].actor_id()).unwrap();
+
+            self.effects[*effect_index].execute(&mut self.log, &mut self.map, &mut self.enemies[enemy_index], &mut self.player);
+        }
+
+        enemy_effects.reverse();
+        for effect_index in enemy_effects.iter() {
+            let enemy_index = self.enemies.iter().position(|enemy| enemy.id == self.effects[*effect_index].actor_id()).unwrap();
+
+            if self.effects[*effect_index].done(&mut self.enemies[enemy_index], &mut self.map) {
+                self.effects.remove(*effect_index);
+            }
+        }
     }
 
     fn handle_attack(&mut self, direction: Input) {
@@ -403,17 +461,7 @@ impl Game {
             _ => unreachable!(),
         };
 
-        let attack = WeaponAttack::new(&self.player, attack_direction);
-
-        for enemy in &mut self.enemies {
-            for &(row, col) in &attack.area {
-                if enemy.entity.pos_row == row && enemy.entity.pos_col == col {
-                    Fight::weapon_hit(&mut self.log, RndGenerator, &self.player, &mut enemy.entity);
-                }
-            }
-        }
-
-        self.effect_list.push(attack);
+        self.effects.push(Box::new(WeaponHit { direction: attack_direction, id : self.player.id}));
     }
 
     fn handle_move(&mut self, direction: Input) {
@@ -436,7 +484,7 @@ impl Game {
 
         //Collision with alive entity uncool.
         for enemy in &self.enemies {
-            if !enemy.entity.is_death() && row_diff == enemy.entity.pos_row && col_diff == enemy.entity.pos_col {
+            if !enemy.is_death() && row_diff == enemy.pos_row && col_diff == enemy.pos_col {
                 return;
             }
         }
