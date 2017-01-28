@@ -5,12 +5,27 @@ use super::level::{Level, Tile};
 
 pub trait Effect {
 
+    /// Checks if this effect is valid to add to game state.
+    fn valid(&self, effects: &Vec<Box<Effect>>) -> bool {
+        let hit_effect = effects.iter().find(|effect| effect.actor_id() == self.actor_id() && effect.effect_id() == self.effect_id());
+
+        match hit_effect {
+            Some(_) => false,
+            None => true,
+        }
+    }
+
+    /// Executes given effect on other entity.
     fn execute(&mut self, log: &mut Log, map: &mut Level, me: &mut Entity, other: &mut Entity);
 
-    // Bool -> true delete from list.
+    /// Checks if given effect is done.
     fn done(&mut self, me: &mut Entity, map: &mut Level) -> bool;
 
+    /// the actors id.
     fn actor_id(&self) -> u32;
+
+    /// the effect id.
+    fn effect_id(&self) -> u32;
 }
 
 #[derive(Clone)]
@@ -30,7 +45,15 @@ pub struct WeaponHit {
     pub id:u32,
 }
 
+impl WeaponHit {
+    pub fn new( id:u32, direction : AttackDirection) -> WeaponHit {
+        WeaponHit{id:id, direction:direction}
+    }
+}
+
+
 impl Effect for WeaponHit {
+
     fn execute(&mut self, log: &mut Log, map: &mut Level, me: &mut Entity, mut other: &mut Entity) {
         simple_attack(&self.direction, log, me.pos_row, me.pos_col, me, other);
     }
@@ -40,6 +63,10 @@ impl Effect for WeaponHit {
     }
     fn actor_id(&self) -> u32 {
         self.id
+    }
+
+    fn effect_id(&self) -> u32 {
+        1
     }
 }
 
@@ -123,49 +150,72 @@ fn resolve_attack_area(dir: &AttackDirection, pos_row:i32, pos_col:i32) -> Vec<(
 pub struct Storm {
     pub direction: AttackDirection,
     pub id: u32,
+
+    activated : bool,
+    cool_down : u32,
+}
+
+impl Storm {
+    pub fn new( id:u32, direction : AttackDirection) -> Storm {
+        Storm{id:id, direction:direction, activated: false, cool_down: 10}
+    }
 }
 
 impl Effect for Storm {
 
     fn execute(&mut self, log: &mut Log, map: &mut Level, me: &mut Entity, other: &mut Entity) {
-        let (row, col) = resolve_direction(&self.direction);
-        let mut steps = 5;
+        if !self.activated {
+            let (row, col) = resolve_direction(&self.direction);
+            let mut steps = 5;
 
-        let mut pos_row = me.pos_row;
-        let mut pos_col = me.pos_col;
+            let mut pos_row = me.pos_row;
+            let mut pos_col = me.pos_col;
 
-        while steps > 0 {
-            steps -= 1;
+            while steps > 0 {
+                steps -= 1;
+
+                simple_attack(&self.direction, log, pos_row, pos_col, me, other);
+
+                if map.map[(pos_row + row) as usize][(pos_col + col) as usize] == Tile::Floor {
+                    pos_row += row;
+                    pos_col += col;
+                }
+            }
 
             simple_attack(&self.direction, log, pos_row, pos_col, me, other);
-
-            if map.map[(pos_row + row) as usize][(pos_col + col) as usize] == Tile::Floor {
-                pos_row += row;
-                pos_col += col;
-            }
         }
-
-        simple_attack(&self.direction, log, pos_row, pos_col, me, other);
     }
 
     fn done(&mut self, me: &mut Entity, map: &mut Level) -> bool {
-        let (row, col) = resolve_direction(&self.direction);
-        let mut steps = 5;
+        if self.activated {
+            self.cool_down -= 1;
 
-        while steps > 0 {
-            steps -= 1;
+            return self.cool_down == 0;
 
-            if map.map[(me.pos_row + row) as usize][(me.pos_col + col) as usize] == Tile::Floor {
-                me.pos_row += row;
-                me.pos_col += col;
+        } else {
+            let (row, col) = resolve_direction(&self.direction);
+            let mut steps = 5;
+
+            while steps > 0 {
+                steps -= 1;
+
+                if map.map[(me.pos_row + row) as usize][(me.pos_col + col) as usize] == Tile::Floor {
+                    me.pos_row += row;
+                    me.pos_col += col;
+                }
             }
-        }
 
-        true
+            self.activated = true;
+            return false;
+        }
     }
 
     fn actor_id(&self) -> u32 {
         self.id
+    }
+
+    fn effect_id(&self) -> u32 {
+        2
     }
 }
 

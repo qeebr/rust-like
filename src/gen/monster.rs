@@ -88,7 +88,7 @@ pub fn create_monster(player: &Entity, mut monster: &mut Entity, mn_type: u32, d
     }
 
     let potion_drop = rand::thread_rng().gen_range(0, 101);
-    if potion_drop <= 5 {
+    if potion_drop <= 10 {
         let healing_percentage = match monster.monster_difficulty {
             Difficulty::Easy => 5,
             Difficulty::Normal => 10,

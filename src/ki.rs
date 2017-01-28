@@ -29,7 +29,10 @@ pub fn handle_ki(map: &Level, player: &mut Entity, enemies: &mut Vec<Entity>, ef
                 unreachable!();
             };
 
-            effects.push(Box::new(WeaponHit { direction: direction, id: enemies[index].id}));
+            let hit = WeaponHit::new(enemies[index].id, direction);
+            if hit.valid(&effects) {
+                effects.push(Box::new(hit));
+            }
         } else if distance <= 4f32 {
             let direction = if row_diff >= 0 && col_diff >= 0 {
                 if row_diff > col_diff {

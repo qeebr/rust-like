@@ -461,7 +461,11 @@ impl Game {
             _ => unreachable!(),
         };
 
-        self.effects.push(Box::new(WeaponHit { direction: attack_direction, id : self.player.id}));
+        let hit = WeaponHit::new(self.player.id, attack_direction);
+
+        if hit.valid(&self.effects) {
+            self.effects.push(Box::new(hit));
+        }
     }
 
     fn handle_move(&mut self, direction: Input) {
