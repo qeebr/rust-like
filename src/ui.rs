@@ -296,6 +296,7 @@ impl Window {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Input {
     Nothing,
 
