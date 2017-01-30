@@ -17,7 +17,7 @@ impl Window {
 
         initscr();
         raw();//cbreak();
-        halfdelay(5);
+        //halfdelay(5);
         keypad(stdscr(), true);
         noecho();
 
@@ -283,7 +283,7 @@ impl Window {
 
         let x = getmaxx(stdscr());
         let dungeon = format!("{} Dungeon", level.level);
-        mvaddstr(0, x - dungeon.len() as i32 , &dungeon);
+        mvaddstr(0, x - dungeon.len() as i32, &dungeon);
     }
 
     pub fn get_input() -> Input {

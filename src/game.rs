@@ -40,7 +40,9 @@ pub struct Game {
     character_pointer: Type,
     enemy_loot_index: usize,
 
-    player_attack_direction: AttackDirection,
+    player_special_one: bool,
+    player_special_two: bool,
+    player_special_three: bool,
 
     level_generator: LevelGenerator,
 }
@@ -61,7 +63,10 @@ impl Game {
             inventory_pointer: InventoryPointer::Backpack,
             character_pointer: Type::Head,
             enemy_loot_index: 0,
-            player_attack_direction: AttackDirection::North,
+
+            player_special_one: false,
+            player_special_two: false,
+            player_special_three: false,
 
             level_generator: LevelGenerator::new(),
         }
@@ -457,32 +462,40 @@ impl Game {
     }
 
     fn handle_attack(&mut self, direction: Input) {
-        let attack_direction = match direction {
-            Input::AttackUp => AttackDirection::North,
-            Input::AttackDown => AttackDirection::South,
-            Input::AttackLeft => AttackDirection::West,
-            Input::AttackRight => AttackDirection::East,
+        match direction {
+            Input::SpecialOne => self.player_special_one = true,
+            Input::SpecialTwo => self.player_special_two = true,
+            Input::SpecialThree => self.player_special_three = true,
 
-            Input::SpecialOne | Input::SpecialTwo | Input::SpecialThree => self.player_attack_direction.clone(),
+            _ => {
+                let attack_direction = match direction {
+                    Input::AttackUp => AttackDirection::North,
+                    Input::AttackDown => AttackDirection::South,
+                    Input::AttackLeft => AttackDirection::West,
+                    Input::AttackRight => AttackDirection::East,
 
-            _ => unreachable!(),
-        };
+                    _ => unreachable!(),
+                };
 
-        let hit : Box<Effect> = if direction == Input::SpecialOne {
-            Box::new(Storm::new(self.player.id, attack_direction.clone()))
-        } else if direction == Input::SpecialTwo {
-            Box::new(WeaponHit::new(self.player.id, attack_direction.clone()))
-        } else if direction == Input::SpecialThree {
-            Box::new(WeaponHit::new(self.player.id, attack_direction.clone()))
-        } else {
-            Box::new(WeaponHit::new(self.player.id, attack_direction.clone()))
-        };
+                let hit : Box<Effect> = if self.player_special_one {
+                    Box::new(Storm::new(self.player.id, attack_direction))
+                } else if self.player_special_two {
+                    Box::new(WeaponHit::new(self.player.id, attack_direction))
+                } else if self.player_special_three {
+                    Box::new(WeaponHit::new(self.player.id, attack_direction))
+                } else {
+                    Box::new(WeaponHit::new(self.player.id, attack_direction))
+                };
 
-        if hit.valid(&self.effects) {
-            self.effects.push(hit);
+                if hit.valid(&self.effects) {
+                    self.effects.push(hit);
+                }
+
+                self.player_special_one = false;
+                self.player_special_two = false;
+                self.player_special_three = false;
+            }
         }
-
-        self.player_attack_direction = attack_direction;
     }
 
     fn handle_move(&mut self, direction: Input) {
