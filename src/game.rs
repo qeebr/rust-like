@@ -101,12 +101,6 @@ impl Game {
                 Action::Inventory => {
                     self.handle_inventory_state(input)
                 },
-                Action::NextLevel => {
-                    self.enemies.clear();
-                    self.map = self.level_generator.generate_level(self.map.level + 1);
-                    self.set_player_and_monsters();
-                    Action::Game
-                },
                 Action::Menu => {
                     self.handle_menu_state(input)
                 },
@@ -364,34 +358,43 @@ impl Game {
             },
 
             Input::Use => {
-                let enemy = self.enemies.iter().find(|x| x.pos_row == self.player.pos_row && x.pos_col == self.player.pos_col);
+                let mut player_on_enemy = false;
+                {
+                    let enemy = self.enemies.iter().find(|x| x.pos_row == self.player.pos_row && x.pos_col == self.player.pos_col);
+                    player_on_enemy = match enemy {
+                        Option::Some(..) => true,
+                        Option::None => false,
+                    }
+                }
 
-                match enemy {
-                    Option::Some(..) => {
-                        let enemy_with_loot = self.enemies.iter().position(|x| x.backpack.size() > 0 && x.pos_row == self.player.pos_row && x.pos_col == self.player.pos_col);
+                if player_on_enemy {
+                    let enemy_with_loot = self.enemies.iter().position(|x| x.backpack.size() > 0 && x.pos_row == self.player.pos_row && x.pos_col == self.player.pos_col);
 
-                        match enemy_with_loot {
-                            Option::Some(value) => {
-                                self.enemy_loot_index = value;
-                                return Action::Loot;
-                            },
-                            _ => {
-                                self.log.add_message("Nothing to loot here.".to_string());
-                                return Action::Game;
-                            }
-                        }
-                    },
-                    _ => {
-                        if self.map.meta[self.player.pos_row as usize][self.player.pos_col as usize] == Tile::Next {
-                            return Action::NextLevel;
-                        } else if self.map.meta[self.player.pos_row as usize][self.player.pos_col as usize] == Tile::PlSpawn {
-                            self.log.add_message("There is no way up.".to_string());
+                    match enemy_with_loot {
+                        Option::Some(value) => {
+                            self.enemy_loot_index = value;
+                            return Action::Loot;
+                        },
+                        _ => {
+                            self.log.add_message("Nothing to loot here.".to_string());
                             return Action::Game;
                         }
+                    }
+                } else {
+                    if self.map.meta[self.player.pos_row as usize][self.player.pos_col as usize] == Tile::Next {
+                        self.enemies.clear();
+                        self.map = self.level_generator.generate_level(self.map.level + 1);
+                        self.set_player_and_monsters();
 
-                        return Action::Inventory;
-                    },
-                }
+                        return Action::Game;
+                    } else if self.map.meta[self.player.pos_row as usize][self.player.pos_col as usize] == Tile::PlSpawn {
+                        self.log.add_message("There is no way up.".to_string());
+
+                        return Action::Game;
+                    }
+
+                    return Action::Inventory;
+                };
             },
 
             Input::Quit => { return Action::Menu },
@@ -477,7 +480,7 @@ impl Game {
                     _ => unreachable!(),
                 };
 
-                let hit : Box<Effect> = if self.player_special_one {
+                let hit: Box<Effect> = if self.player_special_one {
                     Box::new(Storm::new(self.player.id, attack_direction))
                 } else if self.player_special_two {
                     Box::new(WeaponHit::new(self.player.id, attack_direction))
@@ -540,7 +543,6 @@ enum Action {
     GameOver,
     Loot,
     Inventory,
-    NextLevel,
     Menu,
     Quit,
 }
