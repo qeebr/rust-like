@@ -22,18 +22,21 @@ pub struct Entity {
     pub monster_difficulty: Difficulty,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum MonsterType {
     Unknown,
     Crab,
     Zombie,
     Goblin,
+    Boss,
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Difficulty {
     Easy,
     Normal,
     Hard,
+    Boss,
 }
 
 impl Entity {

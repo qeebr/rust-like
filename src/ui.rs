@@ -194,7 +194,13 @@ impl Window {
         }
 
         //Draw Enemies.
+        let mut has_boss = false;
         for enemy in enemies {
+            if enemy.monster_type == MonsterType::Boss {
+                has_boss = true;
+                continue;
+            }
+
             mv(enemy.pos_row, enemy.pos_col);
             addch(resolve_enemy(enemy));
         }
@@ -205,8 +211,10 @@ impl Window {
         loop {
             match lootable_enemies_iter.next() {
                 Some(enemy) => {
-                    mv(enemy.pos_row, enemy.pos_col);
-                    addch(resolve_enemy(enemy));
+                    if enemy.monster_type != MonsterType::Boss {
+                        mv(enemy.pos_row, enemy.pos_col);
+                        addch(resolve_enemy(enemy));
+                    }
                 },
                 None => { break; }
             }
@@ -214,7 +222,15 @@ impl Window {
 
         //Draw alive enemies, avoid that lootable enemy is over alive enemy.
         for enemy in enemies {
-            if !enemy.is_death() {
+            if !enemy.is_death() && enemy.monster_type == MonsterType::Boss {
+                mvaddch(enemy.pos_row, enemy.pos_col, 'O' as u32);
+                mvaddch(enemy.pos_row-1, enemy.pos_col, 'o' as u32);
+                mvaddch(enemy.pos_row, enemy.pos_col+1, '-' as u32);
+                mvaddch(enemy.pos_row, enemy.pos_col-1, '-' as u32);
+                mvaddch(enemy.pos_row+1, enemy.pos_col-1, '/' as u32);
+                mvaddch(enemy.pos_row+1, enemy.pos_col+1, '\\' as u32);
+
+            } else if !enemy.is_death() && enemy.monster_type != MonsterType::Boss {
                 mv(enemy.pos_row, enemy.pos_col);
                 addch(resolve_enemy(enemy));
             }
@@ -392,6 +408,9 @@ fn resolve_enemy(enemy: &Entity) -> u32 {
                     Difficulty::Hard => {
                         'Ḟ' as u32
                     },
+                    _ => {
+                        unreachable!();
+                    }
                 }
             },
             MonsterType::Crab => {
@@ -405,6 +424,9 @@ fn resolve_enemy(enemy: &Entity) -> u32 {
                     Difficulty::Hard => {
                         'Ṁ' as u32
                     },
+                    _ => {
+                        unreachable!();
+                    }
                 }
             },
             MonsterType::Goblin => {
@@ -418,7 +440,13 @@ fn resolve_enemy(enemy: &Entity) -> u32 {
                     Difficulty::Hard => {
                         'Ẋ' as u32
                     },
+                    _ => {
+                        unreachable!();
+                    }
                 }
+            }
+            _ => {
+                unreachable!();
             }
         }
     }

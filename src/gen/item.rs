@@ -18,6 +18,7 @@ fn generate_random_weapon_name(item_type: &Type, difficulty: &Difficulty) -> Str
         &Difficulty::Easy => "Lesser",
         &Difficulty::Normal => "Good",
         &Difficulty::Hard => "Master",
+        &Difficulty::Boss => "Godlike",
     }.to_string();
 
     let part = match item_type {
@@ -146,6 +147,7 @@ fn calculate_min_difficulty_bonus(monster_difficulty: &Difficulty) -> i32 {
         &Difficulty::Easy => { -4 },
         &Difficulty::Normal => { -2 },
         &Difficulty::Hard => { 0 },
+        &Difficulty::Boss => { 10 },
     }
 }
 
@@ -154,5 +156,6 @@ fn calculate_max_difficulty_bonus(monster_difficulty: &Difficulty) -> i32 {
         &Difficulty::Easy => { 3 },
         &Difficulty::Normal => { 5 },
         &Difficulty::Hard => { 9 },
+        &Difficulty::Boss => { 20 },
     }
 }

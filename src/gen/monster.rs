@@ -20,6 +20,10 @@ pub fn create_monster(player: &Entity, mut monster: &mut Entity, mn_type: u32, d
             monster.name = "Goblin".to_string();
             monster.monster_type = MonsterType::Goblin;
         },
+        4 => {
+            monster.name = "Boss".to_string();
+            monster.monster_type = MonsterType::Boss;
+        }
         _ => panic!("unknown monster_type."),
     };
 
@@ -46,6 +50,11 @@ pub fn create_monster(player: &Entity, mut monster: &mut Entity, mn_type: u32, d
             monster.monster_difficulty = Difficulty::Hard;
             monster.name = "(Hard) ".to_string() + &monster.name;
         },
+        4 => {
+            calculate_monster_stats(&mut monster, player_stats, mean_damage, 3.0f32, 3.0f32, 3.0f32);
+
+            monster.monster_difficulty = Difficulty::Boss;
+        }
         _ => panic!("unknown difficulty."),
     }
 
@@ -93,6 +102,7 @@ pub fn create_monster(player: &Entity, mut monster: &mut Entity, mn_type: u32, d
             Difficulty::Easy => 5,
             Difficulty::Normal => 10,
             Difficulty::Hard => 25,
+            Difficulty::Boss => 100,
         };
         let mut potion = Item { name: "Healing Potion".to_string(), item_type: Type::Potion, modifications: Vec::new() };
 
