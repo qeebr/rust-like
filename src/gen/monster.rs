@@ -99,9 +99,9 @@ pub fn create_monster(player: &Entity, mut monster: &mut Entity, mn_type: u32, d
     let potion_drop = rand::thread_rng().gen_range(0, 101);
     if potion_drop <= 10 {
         let healing_percentage = match monster.monster_difficulty {
-            Difficulty::Easy => 5,
-            Difficulty::Normal => 10,
-            Difficulty::Hard => 25,
+            Difficulty::Easy => 10,
+            Difficulty::Normal => 25,
+            Difficulty::Hard => 50,
             Difficulty::Boss => 100,
         };
         let mut potion = Item { name: "Healing Potion".to_string(), item_type: Type::Potion, modifications: Vec::new() };
