@@ -308,6 +308,10 @@ pub enum Input {
     Use,
     Drop,
 
+    SpecialOne,
+    SpecialTwo,
+    SpecialThree,
+
     AttackUp,
     AttackDown,
     AttackLeft,
@@ -322,14 +326,18 @@ fn resolve_input(input: i32) -> Input {
         KEY_UP => Input::MoveUp,
         KEY_DOWN => Input::MoveDown,
 
-        97 => Input::AttackLeft,
-        119 => Input::AttackUp,
-        100 => Input::AttackRight,
-        115 => Input::AttackDown,
+        49 => Input::SpecialOne,
+        50 => Input::SpecialTwo,
+        51 => Input::SpecialThree,
 
-        113 => Input::Quit, //113 is Q.
-        101 => Input::Use, //101 is E.
-        114 => Input::Drop, //114 is R.
+        97 => Input::AttackLeft, //97 is a
+        119 => Input::AttackUp, //119 is w
+        100 => Input::AttackRight, //100 is d
+        115 => Input::AttackDown, //115 is s
+
+        113 => Input::Quit, //113 is q.
+        101 => Input::Use, //101 is e.
+        114 => Input::Drop, //114 is r.
 
         _ => Input::Nothing,
     }

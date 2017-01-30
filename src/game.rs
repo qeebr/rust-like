@@ -40,6 +40,10 @@ pub struct Game {
     character_pointer: Type,
     enemy_loot_index: usize,
 
+    player_special_one: bool,
+    player_special_two: bool,
+    player_special_three: bool,
+
     level_generator: LevelGenerator,
 }
 
@@ -59,6 +63,9 @@ impl Game {
             inventory_pointer: InventoryPointer::Backpack,
             character_pointer: Type::Head,
             enemy_loot_index: 0,
+            player_special_one: false,
+            player_special_two: false,
+            player_special_three: false,
 
             level_generator: LevelGenerator::new(),
         }
@@ -350,7 +357,8 @@ impl Game {
                 self.handle_move(input);
             },
 
-            Input::AttackUp | Input::AttackDown | Input::AttackLeft | Input::AttackRight => {
+            Input::AttackUp | Input::AttackDown | Input::AttackLeft | Input::AttackRight |
+            Input::SpecialOne | Input::SpecialTwo | Input::SpecialThree => {
                 self.handle_attack(input);
             },
 
@@ -399,8 +407,8 @@ impl Game {
     }
 
     fn handle_player_effects(&mut self) {
-        let mut player_effects : Vec<usize> = Vec::new();
-        let mut index : usize = 0;
+        let mut player_effects: Vec<usize> = Vec::new();
+        let mut index: usize = 0;
 
         for effect in self.effects.iter() {
             if effect.actor_id() == self.player.id {
@@ -425,8 +433,8 @@ impl Game {
     }
 
     fn handle_enemy_effects(&mut self) {
-        let mut enemy_effects : Vec<usize> = Vec::new();
-        let mut index : usize = 0;
+        let mut enemy_effects: Vec<usize> = Vec::new();
+        let mut index: usize = 0;
 
         for effect in self.effects.iter() {
             if effect.actor_id() != self.player.id {
@@ -453,18 +461,39 @@ impl Game {
     }
 
     fn handle_attack(&mut self, direction: Input) {
-        let attack_direction = match direction {
-            Input::AttackUp => AttackDirection::North,
-            Input::AttackDown => AttackDirection::South,
-            Input::AttackLeft => AttackDirection::West,
-            Input::AttackRight => AttackDirection::East,
-            _ => unreachable!(),
-        };
+        match direction {
+            Input::SpecialOne => self.player_special_one = true,
+            Input::SpecialTwo => self.player_special_two = true,
+            Input::SpecialThree => self.player_special_three = true,
 
-        let hit = WeaponHit::new(self.player.id, attack_direction);
+            _ => {
+                let attack_direction = match direction {
+                    Input::AttackUp => AttackDirection::North,
+                    Input::AttackDown => AttackDirection::South,
+                    Input::AttackLeft => AttackDirection::West,
+                    Input::AttackRight => AttackDirection::East,
 
-        if hit.valid(&self.effects) {
-            self.effects.push(Box::new(hit));
+                    _ => unreachable!(),
+                };
+
+                let hit : Box<Effect> = if self.player_special_one {
+                    Box::new(Storm::new(self.player.id, attack_direction))
+                } else if self.player_special_two {
+                    Box::new(WeaponHit::new(self.player.id, attack_direction))
+                } else if self.player_special_three {
+                    Box::new(WeaponHit::new(self.player.id, attack_direction))
+                } else {
+                    Box::new(WeaponHit::new(self.player.id, attack_direction))
+                };
+
+                if hit.valid(&self.effects) {
+                    self.effects.push(hit);
+                }
+
+                self.player_special_one = false;
+                self.player_special_two = false;
+                self.player_special_three = false;
+            }
         }
     }
 
