@@ -57,7 +57,7 @@ impl LevelGenerator {
     }
 
     pub fn generate_level(&mut self, level: i32) -> Level {
-        if level % 10 == 0 {
+        if level != 0 && level % 10 == 0 {
             return generate_boss_level();
         }
 
