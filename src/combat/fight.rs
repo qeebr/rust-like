@@ -8,7 +8,10 @@ use super::super::log::*;
 pub struct Fight;
 
 impl Fight {
-    pub fn weapon_hit<T: Generator>(log : &mut Log, generator: T, me: &Entity, enemy: &mut Entity) {
+
+    ///calculates a weapon hit.
+    /// crit_chance from 0 to 100.
+    pub fn weapon_hit<T: Generator>(log : &mut Log, generator: T, me: &Entity, enemy: &mut Entity, crit_chance: i32) {
         if enemy.is_death() {
             return;
         }
@@ -22,13 +25,27 @@ impl Fight {
 
         let actual_damage = generator.generate(weapon_damage.0 + attack_bonus, weapon_damage.1 + attack_bonus);
 
+        let crit = generator.generate(0, 100) <= crit_chance;
+        let actual_damage = if crit {
+            actual_damage * 2
+        } else {
+            actual_damage
+        };
+
+
         if actual_damage > 0 {
             enemy.current_life -= actual_damage;
 
-            if enemy.is_death() {
-                log.add_message(format!("{} killed {}!", me.name, enemy.name));
+            let crit_prefix = if crit {
+                "CRIT! "
             } else {
-                log.add_message(format!("{} hit {} with {}!", me.name, enemy.name, actual_damage));
+                ""
+            }.to_string();
+
+            if enemy.is_death() {
+                log.add_message(crit_prefix + &format!("{} killed {}!", me.name, enemy.name));
+            } else {
+                log.add_message(crit_prefix + &format!("{} hit {} with {}!", me.name, enemy.name, actual_damage));
             }
 
         } else {
@@ -41,14 +58,14 @@ impl Fight {
 pub struct RndGenerator;
 
 impl Generator for RndGenerator {
-    fn generate(self, min_inclusive: i32, max_inclusive: i32) -> i32 {
+    fn generate(&self, min_inclusive: i32, max_inclusive: i32) -> i32 {
         //gen_range generates min_inclusive to max_exclusive.
         rand::thread_rng().gen_range(min_inclusive, max_inclusive + 1)
     }
 }
 
 pub trait Generator {
-    fn generate(self, min_inclusive: i32, max_inclusive: i32) -> i32;
+    fn generate(&self, min_inclusive: i32, max_inclusive: i32) -> i32;
 }
 
 #[test]

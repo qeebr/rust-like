@@ -4,7 +4,6 @@ use super::combat::fight::{Fight, RndGenerator};
 use super::level::{Level, Tile};
 
 pub trait Effect {
-
     /// Checks if this effect is valid to add to game state.
     fn valid(&self, effects: &Vec<Box<Effect>>) -> bool {
         let hit_effect = effects.iter().find(|effect| effect.actor_id() == self.actor_id() && effect.effect_id() == self.effect_id());
@@ -42,20 +41,19 @@ pub enum AttackDirection {
 
 pub struct WeaponHit {
     pub direction: AttackDirection,
-    pub id:u32,
+    pub id: u32,
 }
 
 impl WeaponHit {
-    pub fn new( id:u32, direction : AttackDirection) -> WeaponHit {
-        WeaponHit{id:id, direction:direction}
+    pub fn new(id: u32, direction: AttackDirection) -> WeaponHit {
+        WeaponHit { id: id, direction: direction }
     }
 }
 
 
 impl Effect for WeaponHit {
-
     fn execute(&mut self, log: &mut Log, map: &mut Level, me: &mut Entity, mut other: &mut Entity) {
-        simple_attack(&self.direction, log, me.pos_row, me.pos_col, me, other);
+        simple_attack(&self.direction, log, me.pos_row, me.pos_col, me, other, 10);
     }
 
     fn done(&mut self, me: &mut Entity, map: &mut Level) -> bool {
@@ -70,17 +68,17 @@ impl Effect for WeaponHit {
     }
 }
 
-fn simple_attack(direction: &AttackDirection, log: &mut Log, pos_row:i32, pos_col:i32, me: &mut Entity, mut other: &mut Entity) {
+fn simple_attack(direction: &AttackDirection, log: &mut Log, pos_row: i32, pos_col: i32, me: &mut Entity, mut other: &mut Entity, crit_chance: i32) {
     let attack_area = resolve_attack_area(direction, pos_row, pos_col);
 
     for (row, col) in attack_area {
         if other.pos_row == row && other.pos_col == col {
-            Fight::weapon_hit(log, RndGenerator, me, &mut other);
+            Fight::weapon_hit(log, RndGenerator, me, &mut other, crit_chance);
         }
     }
 }
 
-fn resolve_attack_area(dir: &AttackDirection, pos_row:i32, pos_col:i32) -> Vec<(i32, i32)> {
+fn resolve_attack_area(dir: &AttackDirection, pos_row: i32, pos_col: i32) -> Vec<(i32, i32)> {
     let mut attack_area = Vec::new();
 
     match dir {
@@ -151,18 +149,17 @@ pub struct Storm {
     pub direction: AttackDirection,
     pub id: u32,
 
-    activated : bool,
-    cool_down : u32,
+    activated: bool,
+    cool_down: u32,
 }
 
 impl Storm {
-    pub fn new( id:u32, direction : AttackDirection) -> Storm {
-        Storm{id:id, direction:direction, activated: false, cool_down: 10}
+    pub fn new(id: u32, direction: AttackDirection) -> Storm {
+        Storm { id: id, direction: direction, activated: false, cool_down: 10 }
     }
 }
 
 impl Effect for Storm {
-
     fn execute(&mut self, log: &mut Log, map: &mut Level, me: &mut Entity, other: &mut Entity) {
         if !self.activated {
             let (row, col) = resolve_direction(&self.direction);
@@ -174,7 +171,7 @@ impl Effect for Storm {
             while steps > 0 {
                 steps -= 1;
 
-                simple_attack(&self.direction, log, pos_row, pos_col, me, other);
+                simple_attack(&self.direction, log, pos_row, pos_col, me, other, 100);
 
                 if map.map[(pos_row + row) as usize][(pos_col + col) as usize] == Tile::Floor {
                     pos_row += row;
@@ -182,7 +179,7 @@ impl Effect for Storm {
                 }
             }
 
-            simple_attack(&self.direction, log, pos_row, pos_col, me, other);
+            simple_attack(&self.direction, log, pos_row, pos_col, me, other, 100);
         }
     }
 
@@ -191,7 +188,6 @@ impl Effect for Storm {
             self.cool_down -= 1;
 
             return self.cool_down == 0;
-
         } else {
             let (row, col) = resolve_direction(&self.direction);
             let mut steps = 5;
