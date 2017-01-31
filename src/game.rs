@@ -11,7 +11,7 @@ use super::ki::*;
 /*
     Was kann ich verbessern:
     * Evtl noch nen Defense/ Angriff Boni, der Prozentual berechnet wird
-
+    * Rendern der special attacken.
 
     UI
     * Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
