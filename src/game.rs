@@ -4,13 +4,12 @@ use super::level::*;
 use super::gen::level::*;
 use super::gen::monster::*;
 use super::ui::*;
-use super::effect::{AttackDirection, WeaponHit, Storm, Effect};
+use super::effect::{AttackDirection, WeaponHit, Storm, RoundHouse, Effect};
 use super::log::*;
 use super::ki::*;
 
 /*
     Was kann ich verbessern:
-    * Rundumschlag!
     * Evtl noch nen Defense/ Angriff Boni, der Prozentual berechnet wird
 
 
@@ -481,7 +480,7 @@ impl Game {
                 let hit: Box<Effect> = if self.player_special_one {
                     Box::new(Storm::new(self.player.id, attack_direction))
                 } else if self.player_special_two {
-                    Box::new(WeaponHit::new(self.player.id, attack_direction))
+                    Box::new(RoundHouse::new(self.player.id, attack_direction))
                 } else if self.player_special_three {
                     Box::new(WeaponHit::new(self.player.id, attack_direction))
                 } else {

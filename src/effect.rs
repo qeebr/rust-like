@@ -37,6 +37,7 @@ pub enum AttackDirection {
     SouthWest,
     West,
     NorthWest,
+    RoundHouseKick,
 }
 
 pub struct WeaponHit {
@@ -140,6 +141,16 @@ fn resolve_attack_area(dir: &AttackDirection, pos_row: i32, pos_col: i32) -> Vec
             attack_area.push((pos_row - 1, pos_col - 1));
             attack_area.push((pos_row - 1, pos_col));
         },
+        &AttackDirection::RoundHouseKick => {
+            attack_area.push((pos_row    , pos_col - 1));
+            attack_area.push((pos_row - 1, pos_col - 1));
+            attack_area.push((pos_row - 1, pos_col    ));
+            attack_area.push((pos_row - 1, pos_col + 1));
+            attack_area.push((pos_row    , pos_col + 1));
+            attack_area.push((pos_row + 1, pos_col + 1));
+            attack_area.push((pos_row + 1, pos_col    ));
+            attack_area.push((pos_row + 1, pos_col - 1));
+        }
     };
 
     attack_area
@@ -222,5 +233,46 @@ fn resolve_direction(direction: &AttackDirection) -> (i32, i32) {
         &AttackDirection::East => { (0, 1) },
         &AttackDirection::West => { (0, -1) },
         _ => { panic!("not supported.") }
+    }
+}
+q
+pub struct RoundHouse {
+    pub direction: AttackDirection,
+    pub id: u32,
+
+    activated: bool,
+    cool_down: u32,
+}
+
+impl RoundHouse {
+    pub fn new(id: u32, direction: AttackDirection) -> Storm {
+        Storm { id: id, direction: direction, activated: false, cool_down: 4 }
+    }
+}
+
+impl Effect for RoundHouse {
+    fn execute(&mut self, log: &mut Log, map: &mut Level, me: &mut Entity, other: &mut Entity) {
+        if !self.activated {
+            simple_attack(&AttackDirection::RoundHouseKick, log, me.pos_row, me.pos_col, me, other, 100);
+        }
+    }
+
+    fn done(&mut self, me: &mut Entity, map: &mut Level) -> bool {
+        if self.activated {
+            self.cool_down -= 1;
+
+            return self.cool_down == 0;
+        } else {
+            self.activated = true;
+            return false;
+        }
+    }
+
+    fn actor_id(&self) -> u32 {
+        self.id
+    }
+
+    fn effect_id(&self) -> u32 {
+        3
     }
 }
