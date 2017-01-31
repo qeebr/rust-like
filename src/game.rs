@@ -11,18 +11,13 @@ use super::ki::*;
 /*
     Was kann ich verbessern:
 
-    Generierung
-    * Alle 10 oder 20 Level/Monster ein Boss-Monster einfügen, das richtig BÄM macht -> Krasseren Loot droppt, -> den Zusatz aus Master rausnehmen und nur für diese Klasse von Items verwenden.
-    * Die Stats der Items ebenfalls in KLassen einteilen, das Helme immer weniger haben wie Chests und Chests am meisten und Legs am wenigsten oder so.
-
     UI
     * Die einzelnen Fenster für Loot und bla überschneiden sich, String ausgabe finden die um chars verschiebt -> Anzeige Karte blendet in die Spieler anzeige.
     * Zucker: Anzeigen ob Item besser ist.
 
     Game
-    * Spezial-Attacken einfügen.
     * Monster-Generierung balancieren.
-    * Das verkaufen von Items bringt Gold, Gold gegen Healing-Potions eintauschen.
+    * Das wegwerfen von Items bringt Etwas, Etwas gegen Etwas-Anderes eintauschen.
 */
 
 pub struct Game {

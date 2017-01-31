@@ -57,6 +57,10 @@ impl LevelGenerator {
     }
 
     pub fn generate_level(&mut self, level: i32) -> Level {
+        if level % 10 == 0 {
+            return generate_boss_level();
+        }
+
         let size_rows = 20;
         let size_cols = 50;
         let min_room_count = 3;
@@ -504,6 +508,84 @@ fn create_level(rooms: &Vec<Room>, size_rows: usize, size_cols: usize, level : i
     }
 
     level
+}
+
+fn generate_boss_level() -> Level {
+    let mut rows = Vec::new();
+
+    let mut str_map = Vec::new();
+    str_map.push("                               ".to_string());
+    str_map.push(" xxxxxxxxxxxxxxxxxxxxxxx       ".to_string());
+    str_map.push(" x_____________________x       ".to_string());
+    str_map.push(" x_____________________x xxxxx ".to_string());
+    str_map.push(" x_____________________xxx___x ".to_string());
+    str_map.push(" x___________________________x ".to_string());
+    str_map.push(" x_____________________xxx___x ".to_string());
+    str_map.push(" x_____________________x xxxxx ".to_string());
+    str_map.push(" x_____________________x       ".to_string());
+    str_map.push(" xxxxxxxxxxxxxxxxxxxxxxx       ".to_string());
+    str_map.push("                               ".to_string());
+
+    for str_row in str_map {
+        let mut chars = str_row.chars();
+        let mut row = Vec::new();
+
+        loop {
+            match chars.next() {
+                Option::Some(char) => {
+                    match char {
+                        ' ' => row.push(Tile::Nothing),
+                        'x' => row.push(Tile::Wall),
+                        '_' => row.push(Tile::Floor),
+                        _ => {},
+                    }
+                }
+                Option::None => break
+            }
+        }
+
+        rows.push(row);
+    }
+
+    let mut meta = Vec::new();
+
+    let mut str_map = Vec::new();
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("    P             B    D   U   ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+    str_map.push("                               ".to_string());
+
+    for str_row in str_map {
+        let mut chars = str_row.chars();
+        let mut row = Vec::new();
+
+        loop {
+            match chars.next() {
+                Option::Some(char) => {
+                    match char {
+                        ' ' => row.push(Tile::Nothing),
+                        'P' => row.push(Tile::PlSpawn),
+                        'B' => row.push(Tile::MnSpawn {mn_type: 4, difficulty: 4}),
+                        'D' => row.push(Tile::Nothing),
+                        'U' => row.push(Tile::Next),
+                        _ => {},
+                    }
+                }
+                Option::None => break
+            }
+        }
+
+        meta.push(row);
+    }
+
+    Level { map: rows, meta: meta, level: 0 }
 }
 
 #[test]
