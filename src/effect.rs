@@ -25,6 +25,9 @@ pub trait Effect {
 
     /// the effect id.
     fn effect_id(&self) -> u32;
+
+    //To determine if direction is needed.
+    fn needs_direction(&self) -> bool;
 }
 
 #[derive(Clone)]
@@ -66,6 +69,9 @@ impl Effect for WeaponHit {
 
     fn effect_id(&self) -> u32 {
         1
+    }
+    fn needs_direction(&self) -> bool {
+        true
     }
 }
 
@@ -224,6 +230,9 @@ impl Effect for Storm {
     fn effect_id(&self) -> u32 {
         2
     }
+    fn needs_direction(&self) -> bool {
+        true
+    }
 }
 
 fn resolve_direction(direction: &AttackDirection) -> (i32, i32) {
@@ -237,7 +246,6 @@ fn resolve_direction(direction: &AttackDirection) -> (i32, i32) {
 }
 
 pub struct RoundHouse {
-    pub direction: AttackDirection,
     pub id: u32,
 
     activated: bool,
@@ -245,8 +253,8 @@ pub struct RoundHouse {
 }
 
 impl RoundHouse {
-    pub fn new(id: u32, direction: AttackDirection) -> RoundHouse {
-        RoundHouse { id: id, direction: direction, activated: false, cool_down: 4 }
+    pub fn new(id: u32) -> RoundHouse {
+        RoundHouse { id: id, activated: false, cool_down: 4 }
     }
 }
 
@@ -274,5 +282,8 @@ impl Effect for RoundHouse {
 
     fn effect_id(&self) -> u32 {
         3
+    }
+    fn needs_direction(&self) -> bool {
+        false
     }
 }

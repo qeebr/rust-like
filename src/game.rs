@@ -462,38 +462,54 @@ impl Game {
     }
 
     fn handle_attack(&mut self, direction: Input) {
-        match direction {
-            Input::SpecialOne => self.player_special_one = true,
-            Input::SpecialTwo => self.player_special_two = true,
-            Input::SpecialThree => self.player_special_three = true,
+        //AttackDirection will not be used.
+        //effect is direction_less.
+        let effect: Box<Effect> = match direction {
+            Input::SpecialOne => Box::new(Storm::new(self.player.id, AttackDirection::North)),
+            Input::SpecialTwo => Box::new(RoundHouse::new(self.player.id)),
+            Input::SpecialThree =>  Box::new(WeaponHit::new(self.player.id, AttackDirection::North)),
+            _ => Box::new(WeaponHit::new(self.player.id, AttackDirection::North)),
+        };
 
-            _ => {
-                let attack_direction = match direction {
-                    Input::AttackUp => AttackDirection::North,
-                    Input::AttackDown => AttackDirection::South,
-                    Input::AttackLeft => AttackDirection::West,
-                    Input::AttackRight => AttackDirection::East,
+        if effect.needs_direction() {
+            match direction {
+                Input::SpecialOne => self.player_special_one = true,
+                Input::SpecialTwo => self.player_special_two = true,
+                Input::SpecialThree => self.player_special_three = true,
 
-                    _ => unreachable!(),
-                };
+                _ => {
+                    let attack_direction = match direction {
+                        Input::AttackUp => AttackDirection::North,
+                        Input::AttackDown => AttackDirection::South,
+                        Input::AttackLeft => AttackDirection::West,
+                        Input::AttackRight => AttackDirection::East,
 
-                let hit: Box<Effect> = if self.player_special_one {
-                    Box::new(Storm::new(self.player.id, attack_direction))
-                } else if self.player_special_two {
-                    Box::new(RoundHouse::new(self.player.id, attack_direction))
-                } else if self.player_special_three {
-                    Box::new(WeaponHit::new(self.player.id, attack_direction))
-                } else {
-                    Box::new(WeaponHit::new(self.player.id, attack_direction))
-                };
+                        _ => unreachable!(),
+                    };
 
-                if hit.valid(&self.effects) {
-                    self.effects.push(hit);
+                    //Here are the correct AttackDirections.
+                    let hit: Box<Effect> = if self.player_special_one {
+                        Box::new(Storm::new(self.player.id, attack_direction))
+                    } else if self.player_special_two {
+                        Box::new(RoundHouse::new(self.player.id))
+                    } else if self.player_special_three {
+                        Box::new(WeaponHit::new(self.player.id, attack_direction))
+                    } else {
+                        Box::new(WeaponHit::new(self.player.id, attack_direction))
+                    };
+
+                    if hit.valid(&self.effects) {
+                        self.effects.push(hit);
+                    }
+
+                    self.player_special_one = false;
+                    self.player_special_two = false;
+                    self.player_special_three = false;
                 }
-
-                self.player_special_one = false;
-                self.player_special_two = false;
-                self.player_special_three = false;
+            }
+        } else {
+            if effect.valid(&self.effects) {
+                self.effects.push(effect);
             }
         }
     }
