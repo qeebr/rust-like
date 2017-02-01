@@ -235,7 +235,7 @@ fn resolve_direction(direction: &AttackDirection) -> (i32, i32) {
         _ => { panic!("not supported.") }
     }
 }
-q
+
 pub struct RoundHouse {
     pub direction: AttackDirection,
     pub id: u32,
@@ -245,8 +245,8 @@ pub struct RoundHouse {
 }
 
 impl RoundHouse {
-    pub fn new(id: u32, direction: AttackDirection) -> Storm {
-        Storm { id: id, direction: direction, activated: false, cool_down: 4 }
+    pub fn new(id: u32, direction: AttackDirection) -> RoundHouse {
+        RoundHouse { id: id, direction: direction, activated: false, cool_down: 4 }
     }
 }
 
