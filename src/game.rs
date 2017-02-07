@@ -42,6 +42,7 @@ pub struct Game {
     player_special_three: bool,
 
     level_generator: LevelGenerator,
+    window: Window,
 }
 
 impl Game {
@@ -66,6 +67,7 @@ impl Game {
             player_special_three: false,
 
             level_generator: LevelGenerator::new(),
+            window: Window::new(),
         }
     }
 
@@ -80,7 +82,7 @@ impl Game {
     }
 
     pub fn run(&mut self) {
-        Window::draw(&mut self.log, &self.map, &self.player, &self.enemies);
+        self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies);
 
         loop {
             let input = Window::get_input();
@@ -116,19 +118,19 @@ impl Game {
                 self.game_state = next_game_state;
             }
 
-            Window::draw(&mut self.log, &self.map, &self.player, &self.enemies);
+            self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies);
 
             if self.game_state == Action::Loot {
                 let enemy = &self.enemies[self.enemy_loot_index];
 
-                Window::draw_loot(&enemy.backpack, self.backpack_index, true, &enemy.name)
+                self.window.draw_loot(&enemy.backpack, self.backpack_index, true, &enemy.name)
             } else if self.game_state == Action::Inventory {
-                Window::draw_loot(&self.player.backpack, self.backpack_index, self.inventory_pointer == InventoryPointer::Backpack, &"".to_string());
-                Window::draw_entity(&self.player, self.character_pointer, self.inventory_pointer == InventoryPointer::Character);
+                self.window.draw_loot(&self.player.backpack, self.backpack_index, self.inventory_pointer == InventoryPointer::Backpack, &"".to_string());
+                self.window.draw_entity(&self.player, self.character_pointer, self.inventory_pointer == InventoryPointer::Character);
             } else if self.game_state == Action::Menu {
-                Window::draw_menu();
+                self.window.draw_menu();
             } else if self.game_state == Action::GameOver {
-                Window::draw_game_over();
+                self.window.draw_game_over();
             }
         }
     }
@@ -467,7 +469,7 @@ impl Game {
         let effect: Box<Effect> = match direction {
             Input::SpecialOne => Box::new(Storm::new(self.player.id, AttackDirection::North)),
             Input::SpecialTwo => Box::new(RoundHouse::new(self.player.id)),
-            Input::SpecialThree =>  Box::new(WeaponHit::new(self.player.id, AttackDirection::North)),
+            Input::SpecialThree => Box::new(WeaponHit::new(self.player.id, AttackDirection::North)),
             _ => Box::new(WeaponHit::new(self.player.id, AttackDirection::North)),
         };
 

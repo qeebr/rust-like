@@ -8,9 +8,30 @@ use super::character::item::*;
 use super::character::stats::*;
 use super::log::*;
 
-pub struct Window;
+pub struct Window {
+    player_window: WINDOW,
+    map_window: WINDOW,
+    status_window: WINDOW,
+    backpack_window: WINDOW,
+    character_window: WINDOW,
+    item_window: WINDOW,
+    menu_window: WINDOW,
+}
+
 
 impl Window {
+    pub fn new() -> Window {
+        Window {
+            player_window: create_player_window(),
+            map_window: create_map_window(),
+            status_window: create_status_window(),
+            backpack_window: create_backpack_window(),
+            character_window: create_character_window(),
+            item_window: create_item_window(),
+            menu_window: create_menu_window(),
+        }
+    }
+
     pub fn init() {
         let locale_conf = LcCategory::all;
         setlocale(locale_conf, "UTF-8");
@@ -21,110 +42,132 @@ impl Window {
         keypad(stdscr(), true);
         noecho();
 
-
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
     }
 
-    pub fn draw_game_over() {
+    pub fn draw_game_over(&mut self) {
+        destroy_win(self.menu_window);
+        self.menu_window = create_menu_window();
+
         let message = "Game Over".to_string();
-        mvprintw(12, (85 - message.len() as i32) / 2, &message);
+        mvwprintw(self.menu_window, 1, (33 - message.len() as i32) / 2 + 1, &message);
+
+        wrefresh(self.menu_window);
     }
 
-    pub fn draw_menu() {
+    pub fn draw_menu(&mut self) {
+        destroy_win(self.menu_window);
+        self.menu_window = create_menu_window();
+
         let message = "Press Q to Return to Game".to_string();
-        mvprintw(12, (85 - message.len() as i32) / 2, &message);
+        mvwprintw(self.menu_window, 1, (33 - message.len() as i32) / 2 +1, &message);
         let message = "Press E to Exit".to_string();
-        mvprintw(13, (85 - message.len() as i32) / 2, &message);
+        mvwprintw(self.menu_window, 2, (33 - message.len() as i32) / 2 +1, &message);
+
+        wrefresh(self.menu_window);
     }
 
-    pub fn draw_entity(player: &Entity, character_pointer: Type, active: bool) {
-        let character_offset_row = 2;
-        let character_offset_col = 0;
+    pub fn draw_entity(&mut self, player: &Entity, character_pointer: Type, active: bool) {
+        destroy_win(self.character_window);
+        self.character_window = create_character_window();
 
-        mvprintw(character_offset_row + 0, character_offset_col, &format!(" Head:     {}", player.head_item.name));
-        mvprintw(character_offset_row + 1, character_offset_col, &format!(" Chest:    {}", player.chest_item.name));
-        mvprintw(character_offset_row + 2, character_offset_col, &format!(" Legs:     {}", player.leg_item.name));
-        mvprintw(character_offset_row + 3, character_offset_col, &format!(" Weapon:   {}", player.weapon.name));
-        mvprintw(character_offset_row + 4, character_offset_col, "----------------");
+        let character_offset_row = 1;
+        let character_offset_col = 1;
+
+        mvwprintw(self.character_window, character_offset_row + 0, character_offset_col, &format!(" Head:     {}", player.head_item.name));
+        mvwprintw(self.character_window, character_offset_row + 1, character_offset_col, &format!(" Chest:    {}", player.chest_item.name));
+        mvwprintw(self.character_window, character_offset_row + 2, character_offset_col, &format!(" Legs:     {}", player.leg_item.name));
+        mvwprintw(self.character_window, character_offset_row + 3, character_offset_col, &format!(" Weapon:   {}", player.weapon.name));
+        mvwprintw(self.character_window, character_offset_row + 4, character_offset_col, "----------------");
 
         let stats = player.calculate_stats();
         let damage = player.weapon.get_damage();
-        mvprintw(character_offset_row + 5, character_offset_col, &format!(" Vitality: {}", stats.vitality));
-        mvprintw(character_offset_row + 6, character_offset_col, &format!(" Strength: {}", stats.strength));
-        mvprintw(character_offset_row + 7, character_offset_col, &format!(" Defense:  {}", stats.defense));
-        mvprintw(character_offset_row + 8, character_offset_col, &format!(" Speed:    {}", stats.speed));
-        mvprintw(character_offset_row + 9, character_offset_col, &format!(" Damage:   {}-{}", damage.0, damage.1));
+        mvwprintw(self.character_window, character_offset_row + 5, character_offset_col, &format!(" Vitality: {}", stats.vitality));
+        mvwprintw(self.character_window, character_offset_row + 6, character_offset_col, &format!(" Strength: {}", stats.strength));
+        mvwprintw(self.character_window, character_offset_row + 7, character_offset_col, &format!(" Defense:  {}", stats.defense));
+        mvwprintw(self.character_window, character_offset_row + 8, character_offset_col, &format!(" Speed:    {}", stats.speed));
+        mvwprintw(self.character_window, character_offset_row + 9, character_offset_col, &format!(" Damage:   {}-{}", damage.0, damage.1));
 
         if active {
             match character_pointer {
                 Type::Head => {
-                    mvaddch((character_offset_row + 0) as i32, character_offset_col, resolve_item_cursor());
-                    Window::draw_item(&player.head_item);
+                    mvwaddch(self.character_window, (character_offset_row + 0) as i32, character_offset_col, resolve_item_cursor());
+                    self.draw_item(&player.head_item);
                 },
                 Type::Chest => {
-                    mvaddch((character_offset_row + 1) as i32, character_offset_col, resolve_item_cursor());
-                    Window::draw_item(&player.chest_item);
+                    mvwaddch(self.character_window, (character_offset_row + 1) as i32, character_offset_col, resolve_item_cursor());
+                    self.draw_item(&player.chest_item);
                 },
                 Type::Legs => {
-                    mvaddch((character_offset_row + 2) as i32, character_offset_col, resolve_item_cursor());
-                    Window::draw_item(&player.leg_item);
+                    mvwaddch(self.character_window, (character_offset_row + 2) as i32, character_offset_col, resolve_item_cursor());
+                    self.draw_item(&player.leg_item);
                 },
                 Type::Weapon => {
-                    mvaddch((character_offset_row + 3) as i32, character_offset_col, resolve_item_cursor());
-                    Window::draw_item(&player.weapon);
+                    mvwaddch(self.character_window, (character_offset_row + 3) as i32, character_offset_col, resolve_item_cursor());
+                    self.draw_item(&player.weapon);
                 },
                 _ => {},
             }
         }
+
+        wrefresh(self.character_window);
     }
 
-    pub fn draw_item(item: &Item) {
+    pub fn draw_item(&mut self, item: &Item) {
+        destroy_win(self.item_window);
+        self.item_window = create_item_window();
+
         let item_offset_row = 1;
-        let item_offset_col = 27;
+        let item_offset_col = 1;
 
         let mut row = item_offset_row;
-        mvprintw(row as i32, item_offset_col, &item.name);
+        mvwprintw(self.item_window, row as i32, item_offset_col, &item.name);
         row += 1;
 
         let type_str = resolve_type(item.item_type);
-        mvprintw(row as i32, item_offset_col, &type_str);
+        mvwprintw(self.item_window, row as i32, item_offset_col, &type_str);
         row += 1;
 
         for attribute in &item.modifications {
             match attribute {
                 &StatsMod::Damage { min, max } => {
-                    mvprintw(row as i32, item_offset_col, &format!("Damage {}-{}", min, max));
+                    mvwprintw(self.item_window, row as i32, item_offset_col, &format!("Damage {}-{}", min, max));
                 },
                 &StatsMod::AttackSpeed(val) => {
-                    mvprintw(row as i32, item_offset_col, &format!("Speed {}", val));
+                    mvwprintw(self.item_window, row as i32, item_offset_col, &format!("Speed {}", val));
                 }
                 &StatsMod::Add(val) => {
                     match val {
                         Stat::Defense(val) => {
-                            mvprintw(row as i32, item_offset_col, &format!("Defense {}", val));
+                            mvwprintw(self.item_window, row as i32, item_offset_col, &format!("Defense {}", val));
                         },
                         Stat::Speed(val) => {
-                            mvprintw(row as i32, item_offset_col, &format!("Speed {}", val));
+                            mvwprintw(self.item_window, row as i32, item_offset_col, &format!("Speed {}", val));
                         },
                         Stat::Strength(val) => {
-                            mvprintw(row as i32, item_offset_col, &format!("Strength {}", val));
+                            mvwprintw(self.item_window, row as i32, item_offset_col, &format!("Strength {}", val));
                         },
                         Stat::Vitality(val) => {
-                            mvprintw(row as i32, item_offset_col, &format!("Vitality {}", val));
+                            mvwprintw(self.item_window, row as i32, item_offset_col, &format!("Vitality {}", val));
                         }
                     }
                 }
                 &StatsMod::Heal(val) => {
-                    mvprintw(row as i32, item_offset_col, &format!("Heals {}%", val));
+                    mvwprintw(self.item_window, row as i32, item_offset_col, &format!("Heals {}%", val));
                 }
             }
             row += 1;
         }
+
+        wrefresh(self.item_window);
     }
 
-    pub fn draw_loot(backpack: &Backpack, backpack_index: usize, active: bool, name: &String) {
+    pub fn draw_loot(&mut self, backpack: &Backpack, backpack_index: usize, active: bool, name: &String) {
+        destroy_win(self.backpack_window);
+        self.backpack_window = create_backpack_window();
+
         let mut loot_offset_row = 1;
-        let loot_offset_col = 54;
+        let loot_offset_col = 2;
         let display_row_count = 5;
 
         let mut items: Vec<&Item> = Vec::new();
@@ -139,36 +182,95 @@ impl Window {
 
         //Display name
         if name.len() > 0 {
-            mvprintw(loot_offset_row as i32, loot_offset_col, &name);
+            mvwprintw(self.backpack_window, loot_offset_row as i32, loot_offset_col, &name);
             loot_offset_row += 1;
         }
 
         //Display items.
         let mut counter = 0;
         for item in items {
-            mvprintw((counter + loot_offset_row) as i32, 1 + loot_offset_col, &item.name);
+            mvwprintw(self.backpack_window, (counter + loot_offset_row) as i32, 1 + loot_offset_col, &item.name);
             counter += 1;
         }
 
         if active {
             //Mark current items.
-            mvaddch(((backpack_index % display_row_count) + loot_offset_row) as i32, loot_offset_col, resolve_item_cursor());
+            mvwaddch(self.backpack_window, ((backpack_index % display_row_count) + loot_offset_row) as i32, loot_offset_col, resolve_item_cursor());
         }
 
         //Fill empty spaces.
         while counter < display_row_count {
-            mvprintw((counter + loot_offset_row) as i32, 1 + loot_offset_col, "Empty");
+            mvwprintw(self.backpack_window, (counter + loot_offset_row) as i32, 1 + loot_offset_col, "Empty");
             counter += 1;
         }
 
         if active {
             //Draw full item
-            Window::draw_item(&backpack.items[backpack_index]);
+            self.draw_item(&backpack.items[backpack_index]);
         }
+
+        wrefresh(self.backpack_window);
     }
 
-    pub fn draw(log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Entity>) {
-        clear();
+    pub fn draw(&mut self, log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Entity>) {
+
+        self.draw_player(player, level);
+        self.draw_game_msg(log);
+        self.draw_map(level, player, enemies);
+
+    }
+
+    pub fn draw_player(&mut self, player: &Entity, level: &Level) {
+        destroy_win(self.player_window);
+        self.player_window = create_player_window();
+
+        mvwaddch(self.player_window, 1, 1, '[' as u32);
+        let health = ((player.current_life as f32 / player.calculate_max_life() as f32) * 100.0f32) as u32;
+        if health >= 10 {
+            mvwaddch(self.player_window, 1, 2, '#' as u32);
+        }
+        if health >= 20 {
+            mvwaddch(self.player_window, 1, 3, '#' as u32);
+        }
+        if health >= 30 {
+            mvwaddch(self.player_window, 1, 4, '#' as u32);
+        }
+        if health >= 40 {
+            mvwaddch(self.player_window, 1, 5, '#' as u32);
+        }
+        if health >= 50 {
+            mvwaddch(self.player_window, 1, 6, '#' as u32);
+        }
+        if health >= 60 {
+            mvwaddch(self.player_window, 1, 7, '#' as u32);
+        }
+        if health >= 70 {
+            mvwaddch(self.player_window, 1, 8, '#' as u32);
+        }
+        if health >= 80 {
+            mvwaddch(self.player_window, 1, 9, '#' as u32);
+        }
+        if health >= 90 {
+            mvwaddch(self.player_window, 1, 10, '#' as u32);
+        }
+        if health >= 100 {
+            mvwaddch(self.player_window, 1, 11, '#' as u32);
+        }
+        mvwaddch(self.player_window, 1, 12, ']' as u32);
+        mvwprintw(self.player_window, 1, 14, &player.name);
+
+        let x = getmaxx(self.player_window);
+        let dungeon = format!("{} Dungeon", level.level);
+        mvwaddstr(self.player_window, 1, x - (dungeon.len() + 1) as i32, &dungeon);
+
+        wrefresh(self.player_window);
+    }
+
+    pub fn draw_map(&mut self, level: &Level, player: &Entity, enemies: &Vec<Entity>) {
+        destroy_win(self.map_window);
+        self.map_window = create_map_window();
+
+        let offset = 1;
 
         //Draw Map.
         let mut row_index: usize = 0;
@@ -176,14 +278,12 @@ impl Window {
             let mut col_index: usize = 0;
 
             for col in row {
-                mv(row_index as i32, col_index as i32);
-
                 match &level.meta[row_index][col_index] {
                     &Tile::PlSpawn | &Tile::Next => {
-                        addch(resolve_tile(&level.meta[row_index][col_index]));
+                        mvwaddch(self.map_window, row_index as i32 + offset, col_index as i32 + offset, resolve_tile(&level.meta[row_index][col_index]));
                     },
                     _ => {
-                        addch(resolve_tile(col));
+                        mvwaddch(self.map_window, row_index as i32 + offset, col_index as i32 + offset, resolve_tile(col));
                     }
                 }
 
@@ -201,8 +301,7 @@ impl Window {
                 continue;
             }
 
-            mv(enemy.pos_row, enemy.pos_col);
-            addch(resolve_enemy(enemy));
+            mvwaddch(self.map_window, enemy.pos_row + offset, enemy.pos_col + offset, resolve_enemy(enemy));
         }
 
         //Draw Enemies with loot.
@@ -212,8 +311,7 @@ impl Window {
             match lootable_enemies_iter.next() {
                 Some(enemy) => {
                     if enemy.monster_type != MonsterType::Boss {
-                        mv(enemy.pos_row, enemy.pos_col);
-                        addch(resolve_enemy(enemy));
+                        mvwaddch(self.map_window, enemy.pos_row + offset, enemy.pos_col + offset, resolve_enemy(enemy));
                     }
                 },
                 None => { break; }
@@ -223,83 +321,48 @@ impl Window {
         //Draw alive enemies, avoid that lootable enemy is over alive enemy.
         for enemy in enemies {
             if !enemy.is_death() && enemy.monster_type == MonsterType::Boss {
-                mvaddch(enemy.pos_row, enemy.pos_col, 'O' as u32);
-                mvaddch(enemy.pos_row-1, enemy.pos_col, 'o' as u32);
-                mvaddch(enemy.pos_row, enemy.pos_col+1, '-' as u32);
-                mvaddch(enemy.pos_row, enemy.pos_col-1, '-' as u32);
-                mvaddch(enemy.pos_row+1, enemy.pos_col-1, '/' as u32);
-                mvaddch(enemy.pos_row+1, enemy.pos_col+1, '\\' as u32);
-
+                mvwaddch(self.map_window, enemy.pos_row + offset, enemy.pos_col + offset, 'O' as u32);
+                mvwaddch(self.map_window, enemy.pos_row - 1 + offset, enemy.pos_col + offset, 'o' as u32);
+                mvwaddch(self.map_window, enemy.pos_row + offset, enemy.pos_col + 1 + offset, '-' as u32);
+                mvwaddch(self.map_window, enemy.pos_row + offset, enemy.pos_col - 1 + offset, '-' as u32);
+                mvwaddch(self.map_window, enemy.pos_row + 1 + offset, enemy.pos_col - 1 + offset, '/' as u32);
+                mvwaddch(self.map_window, enemy.pos_row + 1 + offset, enemy.pos_col + 1 + offset, '\\' as u32);
             } else if !enemy.is_death() && enemy.monster_type != MonsterType::Boss {
-                mv(enemy.pos_row, enemy.pos_col);
-                addch(resolve_enemy(enemy));
+                mvwaddch(self.map_window, enemy.pos_row + offset, enemy.pos_col + offset, resolve_enemy(enemy));
             }
         }
 
         //Draw Player.
-        mv(player.pos_row, player.pos_col);
-        addch(resolve_player(player));
-
+        mvwaddch(self.map_window, player.pos_row + offset, player.pos_col + offset, resolve_player(player));
         //Draw Effects.
         /*for effect in effect_list {
             for &(row, col) in &effect.area {
                 if &level.map[row as usize][col as usize] != &Tile::Wall {
-                    mv(row, col);
-                    addch(resolve_effect());
+                    mvwaddch(self.map_window, row+offset, col+offset, resolve_effect());
                 }
             }
         }*/
 
-        //Draw latest game message.
+        box_(self.map_window, 0, 0);
+        wrefresh(self.map_window);
+    }
+
+    pub fn draw_game_msg(&mut self, log: &mut Log) {
+        destroy_win(self.status_window);
+        self.status_window = create_status_window();
+
         let msg = log.get_message();
         match msg {
             Option::Some(val) => {
-                mvprintw(LINES() - 1, 0, &val);
+                mvwaddstr(self.status_window, 1, 1, &val);
             },
             Option::None => {
-                mvprintw(LINES() - 1, 0, "                                      ");
+                mvwaddstr(self.status_window, 1, 1, "                                      ");
             },
         }
 
-        //Draw Player Health and Name.
-        mvaddch(0, 0, '[' as u32);
-        let health = ((player.current_life as f32 / player.calculate_max_life() as f32) * 100.0f32) as u32;
-        if health >= 10 {
-            mvaddch(0, 1, '#' as u32);
-        }
-        if health >= 20 {
-            mvaddch(0, 2, '#' as u32);
-        }
-        if health >= 30 {
-            mvaddch(0, 3, '#' as u32);
-        }
-        if health >= 40 {
-            mvaddch(0, 4, '#' as u32);
-        }
-        if health >= 50 {
-            mvaddch(0, 5, '#' as u32);
-        }
-        if health >= 60 {
-            mvaddch(0, 6, '#' as u32);
-        }
-        if health >= 70 {
-            mvaddch(0, 7, '#' as u32);
-        }
-        if health >= 80 {
-            mvaddch(0, 8, '#' as u32);
-        }
-        if health >= 90 {
-            mvaddch(0, 9, '#' as u32);
-        }
-        if health >= 100 {
-            mvaddch(0, 10, '#' as u32);
-        }
-        mvaddch(0, 11, ']' as u32);
-        mvprintw(0, 13, &player.name);
-
-        let x = getmaxx(stdscr());
-        let dungeon = format!("{} Dungeon", level.level);
-        mvaddstr(0, x - dungeon.len() as i32, &dungeon);
+        box_(self.status_window, 0, 0);
+        wrefresh(self.status_window);
     }
 
     pub fn get_input() -> Input {
@@ -307,7 +370,6 @@ impl Window {
     }
 
     pub fn clear() {
-        getch();
         endwin();
     }
 }
@@ -333,6 +395,52 @@ pub enum Input {
     AttackDown,
     AttackLeft,
     AttackRight,
+}
+
+pub fn create_menu_window() -> WINDOW {
+    create_windows(5, 35, 9, 25)
+}
+
+pub fn create_backpack_window() -> WINDOW {
+    create_windows(8, 25, 5, 51)
+}
+
+pub fn create_character_window() -> WINDOW {
+    create_windows(12, 25, 5, 1)
+}
+
+fn create_item_window() -> WINDOW {
+    create_windows(7, 25, 5, 26)
+}
+
+fn create_status_window() -> WINDOW {
+    create_windows(3, 80, 21, 0)
+}
+
+fn create_map_window() -> WINDOW {
+    create_windows(20, 80, 2, 0)
+}
+
+fn create_player_window() -> WINDOW {
+    create_windows(3, 80, 0, 0)
+}
+
+fn create_windows(height: i32, width: i32, start_row: i32, start_col: i32) -> WINDOW {
+    let window = newwin(height, width, start_row, start_col);
+
+    box_(window, 0, 0);
+
+    wrefresh(window);
+
+    window
+}
+
+fn destroy_win(window: WINDOW) {
+    let borderless = ' ' as u32;
+
+    wborder(window, borderless, borderless, borderless, borderless, borderless, borderless, borderless, borderless);
+    wrefresh(window);
+    delwin(window);
 }
 
 fn resolve_input(input: i32) -> Input {
