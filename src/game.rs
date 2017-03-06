@@ -82,7 +82,7 @@ impl Game {
     }
 
     pub fn run(&mut self) {
-        self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies);
+        self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies, true, false);
 
         loop {
             let input = Window::get_input();
@@ -118,7 +118,10 @@ impl Game {
                 self.game_state = next_game_state;
             }
 
-            self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies);
+            let storm_cooldown = self.effects.iter().position(|x| x.actor_id() == self.player.id && x.effect_id() == 2).is_some();
+            let kick_cooldown = self.effects.iter().position(|x| x.actor_id() == self.player.id && x.effect_id() == 3).is_some();
+
+            self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies, storm_cooldown, kick_cooldown);
 
             if self.game_state == Action::Loot {
                 let enemy = &self.enemies[self.enemy_loot_index];

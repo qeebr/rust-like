@@ -18,6 +18,10 @@ pub struct Window {
     menu_window: WINDOW,
 }
 
+static COLOR_HIGHLIGHT: i16 = 16;
+static COLOR_BACKGROUND: i16 = 17;
+
+static COLOR_PAIR_HIGHLIGHT: i16 = 1;
 
 impl Window {
     pub fn new() -> Window {
@@ -37,6 +41,14 @@ impl Window {
         setlocale(locale_conf, "UTF-8");
 
         initscr();
+        start_color();
+        //use_default_colors();
+        init_color(COLOR_HIGHLIGHT, 250 * 4, 250 * 4, 250 * 4);
+        init_color(COLOR_BACKGROUND, 0 * 4, 0 * 4, 0 * 4);
+
+        init_pair(COLOR_PAIR_HIGHLIGHT, COLOR_HIGHLIGHT, COLOR_BACKGROUND);
+
+
         raw();//cbreak();
         //halfdelay(5);
         keypad(stdscr(), true);
@@ -212,15 +224,15 @@ impl Window {
         wrefresh(self.backpack_window);
     }
 
-    pub fn draw(&mut self, log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Entity>) {
+    pub fn draw(&mut self, log: &mut Log, level: &Level, player: &Entity, enemies: &Vec<Entity>, special_one_ready: bool, special_two_ready: bool) {
 
-        self.draw_player(player, level);
+        self.draw_player(player, level, special_one_ready, special_two_ready);
         self.draw_game_msg(log);
         self.draw_map(level, player, enemies);
 
     }
 
-    pub fn draw_player(&mut self, player: &Entity, level: &Level) {
+    pub fn draw_player(&mut self, player: &Entity, level: &Level, special_one_ready: bool, special_two_ready: bool) {
         destroy_win(self.player_window);
         self.player_window = create_player_window();
 
@@ -258,6 +270,22 @@ impl Window {
         }
         mvwaddch(self.player_window, 1, 12, ']' as u32);
         mvwprintw(self.player_window, 1, 14, &player.name);
+
+
+        let attr = COLOR_PAIR(COLOR_PAIR_HIGHLIGHT);
+        if special_one_ready {
+            wattron(self.player_window, attr);
+        }
+
+        mvwprintw(self.player_window, 1, 30, "Storm");
+        wattroff(self.player_window, attr);
+
+        if special_two_ready {
+            wattron(self.player_window, attr);
+        }
+
+        mvwprintw(self.player_window, 1, 42, "Round-House");
+        wattroff(self.player_window, attr);
 
         let x = getmaxx(self.player_window);
         let dungeon = format!("{} Dungeon", level.level);
