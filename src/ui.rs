@@ -322,10 +322,8 @@ impl Window {
         }
 
         //Draw Enemies.
-        let mut has_boss = false;
         for enemy in enemies {
             if enemy.monster_type == MonsterType::Boss {
-                has_boss = true;
                 continue;
             }
 

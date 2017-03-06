@@ -360,7 +360,7 @@ impl Game {
             },
 
             Input::Use => {
-                let mut player_on_enemy = false;
+                let player_on_enemy;
                 {
                     let enemy = self.enemies.iter().find(|x| x.pos_row == self.player.pos_row && x.pos_col == self.player.pos_col);
                     player_on_enemy = match enemy {
