@@ -61,10 +61,10 @@ impl LevelGenerator {
             return generate_boss_level();
         }
 
-        let size_rows = 20;
-        let size_cols = 50;
+        let size_rows = 18;
+        let size_cols = 78;
         let min_room_count = 3;
-        let max_room_count = 7;
+        let max_room_count = 10;
 
         let room_count = self.rng.gen_range(min_room_count, max_room_count);
         let mut rooms: Vec<Room> = Vec::new();
