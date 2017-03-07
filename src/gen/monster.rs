@@ -51,7 +51,7 @@ pub fn create_monster(player: &Entity, mut monster: &mut Entity, mn_type: u32, d
             monster.name = "(Hard) ".to_string() + &monster.name;
         },
         4 => {
-            calculate_monster_stats(&mut monster, player_stats, mean_damage, 3.0f32, 3.0f32, 3.0f32);
+            calculate_monster_stats(&mut monster, player_stats, mean_damage, 2.2f32, 1.4f32, 1.1f32);
 
             monster.monster_difficulty = Difficulty::Boss;
         }
