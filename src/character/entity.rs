@@ -147,7 +147,7 @@ fn add_stat(base_stats: &mut Stats, stat: &Stat) {
 
 #[test]
 fn test_change_item() {
-    let mut player_entity = Entity::new();
+    let mut player_entity = Entity::new(0);
 
     let mut attributes: Vec<StatsMod> = Vec::new();
     attributes.push(StatsMod::Add(Stat::Strength(5)));
