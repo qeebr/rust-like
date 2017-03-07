@@ -82,10 +82,10 @@ impl Game {
     }
 
     pub fn run(&mut self) {
-        self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies, true, false);
+        self.window.draw(&mut self.log, &self.map, &self.player, &self.enemies, false, false);
 
         loop {
-            let input = Window::get_input();
+            let input = self.window.get_input();
 
             let next_game_state = match self.game_state {
                 Action::Game => {

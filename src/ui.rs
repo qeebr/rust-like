@@ -41,8 +41,9 @@ impl Window {
         setlocale(locale_conf, "UTF-8");
 
         initscr();
+
         start_color();
-        //use_default_colors();
+
         init_color(COLOR_HIGHLIGHT, 250 * 4, 250 * 4, 250 * 4);
         init_color(COLOR_BACKGROUND, 0 * 4, 0 * 4, 0 * 4);
 
@@ -51,7 +52,6 @@ impl Window {
 
         raw();//cbreak();
         //halfdelay(5);
-        keypad(stdscr(), true);
         noecho();
 
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
@@ -369,7 +369,7 @@ impl Window {
             }
         }*/
 
-        box_(self.map_window, 0, 0);
+        //box_(self.map_window, 0, 0);
         wrefresh(self.map_window);
     }
 
@@ -391,8 +391,9 @@ impl Window {
         wrefresh(self.status_window);
     }
 
-    pub fn get_input() -> Input {
-        resolve_input(getch())
+    pub fn get_input(&self) -> Input {
+        keypad(self.map_window, true);
+        resolve_input(wgetch(self.map_window))
     }
 
     pub fn clear() {
