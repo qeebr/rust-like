@@ -72,13 +72,11 @@ impl Game {
     }
 
     pub fn init(&mut self) {
-        self.player.name = "qriz".to_string();
+        self.player.name = "TamaNu".to_string();
 
         self.map = self.level_generator.generate_level(0);
 
         self.set_player_and_monsters();
-
-        Window::init();
     }
 
     pub fn run(&mut self) {

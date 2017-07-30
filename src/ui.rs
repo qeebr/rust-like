@@ -25,20 +25,8 @@ static COLOR_PAIR_HIGHLIGHT: i16 = 1;
 
 impl Window {
     pub fn new() -> Window {
-        Window {
-            player_window: create_player_window(),
-            map_window: create_map_window(),
-            status_window: create_status_window(),
-            backpack_window: create_backpack_window(),
-            character_window: create_character_window(),
-            item_window: create_item_window(),
-            menu_window: create_menu_window(),
-        }
-    }
-
-    pub fn init() {
         let locale_conf = LcCategory::all;
-        setlocale(locale_conf, "UTF-8");
+        setlocale(locale_conf, "ISO-8859-1");
 
         initscr();
 
@@ -55,6 +43,16 @@ impl Window {
         noecho();
 
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
+
+        Window {
+            player_window: create_player_window(),
+            map_window: create_map_window(),
+            status_window: create_status_window(),
+            backpack_window: create_backpack_window(),
+            character_window: create_character_window(),
+            item_window: create_item_window(),
+            menu_window: create_menu_window(),
+        }
     }
 
     pub fn draw_game_over(&mut self) {
@@ -604,8 +602,8 @@ fn resolve_tile(tile: &Tile) -> u32 {
         &Tile::Floor => '.' as u32,
         &Tile::Wall => '#' as u32,
         &Tile::Nothing => ' ' as u32,
-        &Tile::PlSpawn => '⋀' as u32,
+        &Tile::PlSpawn => '<' as u32,
         &Tile::MnSpawn { .. } => '?' as u32,
-        &Tile::Next => '⋁' as u32,
+        &Tile::Next => '>' as u32,
     }
 }
